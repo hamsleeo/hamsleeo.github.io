@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>成员与班级管理 · 教师工具箱</title>
+  <link rel="stylesheet" href="assets/portal.css">
+  <link rel="stylesheet" href="assets/account.css">
+  <link rel="stylesheet" href="assets/staff.css">
+</head>
+<body>
+  <div class="container acct-wrap staff-wrap">
+    <header class="acct-head">
+      <a class="acct-back" href="index.html" id="backLink">← 返回工具箱</a>
+      <div class="acct-head-main">
+        <h1>成员与班级管理</h1>
+        <p>管理员审核身份与维护名册；班主任 / 任课老师只读名册并跟进本班考勤与背诵打卡</p>
+      </div>
+      <a class="btn btn-sm" href="account.html" id="toAccount">我的账号</a>
+      <button class="btn btn-sm" id="logoutBtn" hidden>退出登录</button>
+    </header>
+
+    <!-- 未登录 / 无权限 -->
+    <section class="acct-card" id="viewGate">
+      <div class="acct-kicker" id="gateKicker">CHECKING</div>
+      <h2 id="gateTitle">正在核对权限…</h2>
+      <p class="acct-desc" id="gateDesc">稍等片刻。</p>
+      <div id="gateActions"></div>
+    </section>
+
+    <!-- 管理主界面 -->
+    <section id="viewMain" hidden>
+      <div class="staff-who" id="staffWho"></div>
+      <div class="staff-tabs" id="staffTabs">
+        <button class="stab active" data-tab="review" data-admin-only="1" type="button">成员审核 <span class="cnt" id="pendingCount"></span></button>
+        <button class="stab" data-tab="classes" type="button">班级与学生</button>
+        <button class="stab" data-tab="assign" data-admin-only="1" type="button">任课分配</button>
+        <button class="stab" data-tab="follow" type="button">考勤 / 背诵跟进</button>
+      </div>
+
+      <!-- 成员审核 -->
+      <div class="staff-panel" id="panelReview">
+        <div class="staff-panel-head">
+          <div><h3>成员审核</h3><p>教师注册后进入待审核；确认身份时分配四级角色。学生与家长由班级名册自动确认，不在此列。</p></div>
+          <div class="staff-panel-actions">
+            <label class="chk"><input type="checkbox" id="onlyPending" checked> 只看待审核</label>
+            <button class="btn btn-sm" id="refreshMembers" type="button">↻ 刷新</button>
+          </div>
+        </div>
+        <div class="staff-table" id="memberList"></div>
+      </div>
+
+      <!-- 班级与学生 -->
+      <div class="staff-panel" id="panelClasses" hidden>
+        <div class="staff-two-col">
+          <div class="staff-sub">
+            <div class="staff-panel-head"><div><h3>班级</h3><p>先建班级，再录学生名册；学生 / 家长注册时必须与名册姓名一致。</p></div>
+              <button class="btn btn-sm btn-primary" id="addClass" data-admin-only="1" type="button">＋ 新增班级</button></div>
+            <div class="staff-table" id="classList"></div>
+          </div>
+          <div class="staff-sub">
+            <div class="staff-panel-head"><div><h3>学生名册</h3><p>仅管理员可维护；任教学科老师只读。</p></div>
+              <button class="btn btn-sm btn-primary" id="addStudent" data-admin-only="1" type="button">＋ 添加学生</button></div>
+            <div class="field"><label for="rosterClass">按班级筛选</label><select id="rosterClass"><option value="">全部班级</option></select></div>
+            <div class="staff-table" id="studentList"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 任课分配 -->
+      <div class="staff-panel" id="panelAssign" hidden>
+        <div class="staff-panel-head"><div><h3>任课分配</h3><p>把教师与班级、任教学科绑定，教师即可跟进该班的考勤与单词背诵打卡。</p></div></div>
+        <div class="staff-form-row">
+          <div class="field"><label for="asTeacher">教师</label><select id="asTeacher"></select></div>
+          <div class="field"><label for="asClass">班级</label><select id="asClass"></select></div>
+          <div class="field"><label for="asSubject">任教学科</label><input id="asSubject" placeholder="例：英语"></div>
+          <button class="btn btn-primary" id="assignBtn" type="button">保存分配</button>
+        </div>
+        <div class="staff-table" id="teacherList"></div>
+      </div>
+
+      <!-- 跟进 -->
+      <div class="staff-panel" id="panelFollow" hidden>
+        <div class="staff-panel-head"><div><h3>班级跟进</h3><p>按班级查看今日考勤与最近一次单词背诵打卡，并可直接登记。</p></div>
+          <button class="btn btn-sm" id="refreshFollow" type="button">↻ 刷新</button></div>
+        <div class="staff-form-row">
+          <div class="field"><label for="foClass">班级</label><select id="foClass"></select></div>
+          <div class="field"><label for="foDay">日期</label><input id="foDay" type="date"></div>
+        </div>
+        <div class="staff-table" id="followList"></div>
+      </div>
+    </section>
+
+    <!-- 通用弹窗 -->
+    <div class="overlay" id="modalOverlay" hidden>
+      <div class="staff-modal">
+        <div class="modal-head"><h3 id="modalTitle">编辑</h3><button class="x" id="modalClose" type="button">×</button></div>
+        <div class="modal-body" id="modalBody"></div>
+        <div class="modal-foot"><button class="btn btn-sm" id="modalCancel" type="button">取消</button><button class="btn btn-sm btn-primary" id="modalOk" type="button">保存</button></div>
+      </div>
+    </div>
+    <div class="staff-toast" id="toast" hidden></div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@tencent-ai/workbuddy-cloud-sdk@dev/lib/index.global.js"></script>
+  <script src="assets/cloud-config.js"></script>
+  <script src="assets/account.js"></script>
+  <script src="assets/staff.js"></script>
+</body>
+</html>

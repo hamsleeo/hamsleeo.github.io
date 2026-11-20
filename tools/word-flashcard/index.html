@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0d4632">
+<meta name="description" content="单词精灵岛融合版：26 册全量词库，单元闯关、自由闯关、词汇运用、词根拼读、语法闯关、完整词表、复习与班级，学词环节为 3D 翻卡，另有单词记忆卡">
+<title>单词精灵岛 · 融合版</title>
+<link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="css/island.css">
+<link rel="stylesheet" href="css/theme.css">
+</head>
+<body>
+
+<div id="view"><div class="card" style="text-align:center;padding:40px 16px">加载中…</div></div>
+<div id="tabbar" style="display:none"></div>
+<div id="toast"></div>
+
+<!-- 原版功能内核：11 个页面与出题/进度逻辑，业务逻辑零改动 -->
+<script src="js/island-shim.js"></script>
+<script src="js/island-data.js"></script>
+<script src="js/island-core.js"></script>
+<!-- 融合版：3D 学词翻卡所需的派生数据（5870 词全量） -->
+<script src="data/flash-data.js"></script>
+<!-- 融合版：统一发音（有道美音 → 百度 TTS → 浏览器语音），修复点击喇叭无声 -->
+<script src="js/audio-fix.js"></script>
+<script src="js/island-pages.js"></script>
+<script src="js/island-views.js"></script>
+<script src="js/island-app.js"></script>
+<!-- 融合版：导航、线性图标、自检（不改动原版逻辑） -->
+<script src="js/fusion.js"></script>
+
+<script>
+/* 供自动化验证使用：不影响正常功能 */
+if (location.search.indexOf('selftest=1') >= 0 || location.search.indexOf('shot=') >= 0) {
+  document.write('<script src="js/fusion-selftest.js"><\/script>');
+}
+</script>
+<!-- 统一账号身份条：只加一条状态栏，不改闯关 / 词根 / 语法等原有逻辑 -->
+<script src="https://cdn.jsdelivr.net/npm/@tencent-ai/workbuddy-cloud-sdk@dev/lib/index.global.js"></script>
+<script src="../../assets/cloud-config.js"></script>
+<script src="../../assets/account.js"></script>
+<script src="../../assets/account-bar.js" data-tool="单词精灵岛"></script>
+</body>
+</html>

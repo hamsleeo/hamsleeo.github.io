@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>统一账号 · 教师工具箱</title>
+  <link rel="stylesheet" href="assets/portal.css">
+  <link rel="stylesheet" href="assets/account.css">
+</head>
+<body>
+  <div class="container acct-wrap">
+    <header class="acct-head">
+      <a class="acct-back" href="index.html" id="backLink">← 返回工具箱</a>
+      <div class="acct-head-main">
+        <h1>统一账号中心</h1>
+        <p>手机号 + 验证码注册，自设密码；门户、后台、考勤与单词精灵岛通用</p>
+      </div>
+      <button class="btn btn-sm" id="logoutBtn" hidden>退出登录</button>
+    </header>
+
+    <div class="acct-notice" id="acctNotice">
+      <b>身份说明</b>　教师账号需由超级管理员或管理员在后台确认；<strong>班级修仙管理仅向已审核的教师开放</strong>，学生和家长不可注册为该工具的使用者。该工具目前仍用自己独立的云端账号登录，账号统一正在推进中。
+    </div>
+
+    <!-- 登录 -->
+    <section class="acct-card" id="viewLogin">
+      <div class="acct-kicker">SIGN IN</div>
+      <h2>登录</h2>
+      <div class="tabs" id="loginTabs">
+        <button class="tab active" data-mode="password" type="button">密码登录</button>
+        <button class="tab" data-mode="code" type="button">验证码登录</button>
+      </div>
+      <div class="field"><label for="loginPhone">手机号</label><input id="loginPhone" type="tel" inputmode="numeric" maxlength="11" autocomplete="username" placeholder="11 位手机号"></div>
+      <div id="passWrap">
+        <div class="field"><label for="loginPass">密码</label><input id="loginPass" type="password" autocomplete="current-password" placeholder="注册时设置的密码"></div>
+      </div>
+      <div id="codeWrap" hidden>
+        <div class="field"><label for="loginCode">短信验证码</label>
+          <div class="field-row"><input id="loginCode" type="text" inputmode="numeric" maxlength="8" placeholder="收到的验证码"><button class="btn btn-sm" id="loginSend" type="button">获取验证码</button></div>
+        </div>
+        <div class="field" id="newPassWrap" hidden><label for="loginNewPass">设置密码（仅新手机号需要）</label><input id="loginNewPass" type="password" placeholder="至少 6 位"></div>
+      </div>
+      <button class="btn btn-primary btn-block" id="loginBtn" type="button">登录</button>
+      <p class="msg" id="loginMsg"></p>
+      <div class="acct-switch">还没有账号？<a href="#" id="goRegister">用手机号注册 →</a></div>
+    </section>
+
+    <!-- 注册：第一步 -->
+    <section class="acct-card" id="viewReg1" hidden>
+      <div class="acct-kicker">STEP 1 / 2</div>
+      <h2>手机验证 + 设置密码</h2>
+      <p class="acct-desc">验证码用于确认手机号归属；密码设置后，以后可直接用「手机号 + 密码」登录，不必每次收短信。</p>
+      <div class="field"><label for="regPhone">手机号 *</label><input id="regPhone" type="tel" inputmode="numeric" maxlength="11" autocomplete="username" placeholder="11 位手机号"></div>
+      <div class="field"><label for="regCode">短信验证码 *</label>
+        <div class="field-row"><input id="regCode" type="text" inputmode="numeric" maxlength="8" placeholder="收到的验证码"><button class="btn btn-sm" id="regSend" type="button">获取验证码</button></div>
+      </div>
+      <div class="field" id="regPassWrap"><label for="regPass">设置密码 *（至少 6 位）</label><input id="regPass" type="password" autocomplete="new-password" placeholder="请自设一个密码并记牢"></div>
+      <div class="field" id="regPass2Wrap"><label for="regPass2">再输一次密码 *</label><input id="regPass2" type="password" autocomplete="new-password" placeholder="两次输入需一致"></div>
+      <button class="btn btn-primary btn-block" id="regNext" type="button">验证并下一步</button>
+      <p class="msg" id="reg1Msg"></p>
+      <div class="acct-switch">已有账号？<a href="#" id="goLogin1">直接登录</a></div>
+    </section>
+
+    <!-- 注册：第二步 -->
+    <section class="acct-card acct-wide" id="viewReg2" hidden>
+      <div class="acct-kicker">STEP 2 / 2</div>
+      <h2>完善身份资料</h2>
+      <p class="acct-desc">这一步决定你在工具箱里能做什么。教师身份提交后进入待审核；学生 / 家长需选择班级并填写名册中已有的学生姓名。</p>
+
+      <div class="field"><label>注册身份 *</label>
+        <div class="identity-pick" id="identityPick">
+          <label class="pick"><input type="radio" name="identity" value="teacher" checked><span><b>教师</b><small>可申请四级角色；班级修仙仅教师可用</small></span></label>
+          <label class="pick"><input type="radio" name="identity" value="student"><span><b>学生</b><small>考勤与单词背诵打卡</small></span></label>
+          <label class="pick"><input type="radio" name="identity" value="parent"><span><b>家长</b><small>查看孩子的考勤与背诵记录</small></span></label>
+        </div>
+      </div>
+
+      <div class="field-grid">
+        <div class="field"><label for="regName">姓名 *</label><input id="regName" placeholder="真实姓名，至少 2 个字"></div>
+        <div class="field"><label for="regClass">所在 / 任教班级</label><select id="regClass"><option value="">加载中…</option></select><div class="field-hint" id="classHint">教师可稍后由管理员分配班级</div></div>
+      </div>
+
+      <div class="field-grid" id="teacherFields">
+        <div class="field"><label for="regSchool">学校</label><input id="regSchool" placeholder="例：石城县屏山中学"></div>
+        <div class="field"><label for="regSubject">任教学科</label><input id="regSubject" placeholder="例：英语"></div>
+      </div>
+
+      <div class="field-grid" id="studentFields" hidden>
+        <div class="field"><label for="regStudent">学生姓名 *（须与班级名册一致）</label><input id="regStudent" placeholder="例：张小明"></div>
+        <div class="field"><div class="field-hint inline-hint">若名册里还没有这位学生，请联系班主任或管理员在后台「学生名册」里先添加，再回来注册。这样能避免陌生人随意加入班级。</div></div>
+      </div>
+
+      <div class="acct-role-note" id="roleNote">
+        <b>四级教师角色</b>　超级管理员 / 管理员 / 班主任 / 任课老师。注册后由超级管理员或管理员在后台审核时分配，不能自己选择。
+      </div>
+
+      <button class="btn btn-primary btn-block" id="regSubmit" type="button">提交资料</button>
+      <p class="msg" id="reg2Msg"></p>
+      <div class="acct-switch"><a href="#" id="goLogin2">放弃并返回登录</a></div>
+    </section>
+
+    <!-- 我的账号 -->
+    <section id="viewProfile" hidden>
+      <div class="acct-profile">
+        <div class="acct-profile-top">
+          <div><div class="acct-kicker">MY ACCOUNT</div><h2 id="pName">—</h2><p class="acct-desc" id="pMeta">—</p></div>
+          <span class="acct-status" id="pStatus">—</span>
+        </div>
+        <div class="acct-stat-grid" id="pStats"></div>
+        <div class="acct-alert" id="pAlert" hidden></div>
+        <div class="acct-section">
+          <h3>各工具的可用范围</h3>
+          <div class="acct-tool-list" id="pTools"></div>
+        </div>
+        <div class="acct-section" id="pClassSection" hidden>
+          <h3>我的任教班级</h3>
+          <div class="acct-chip-list" id="pClasses"></div>
+        </div>
+        <div class="acct-section" id="pCheckinSection" hidden>
+          <h3>我的打卡记录</h3>
+          <div class="acct-chip-list" id="pCheckins"></div>
+        </div>
+        <div class="acct-actions">
+          <a class="btn btn-sm" href="index.html" id="toHome">返回工具箱</a>
+          <a class="btn btn-sm" href="staff.html" id="toStaff" hidden>成员审核与班级跟进 →</a>
+        </div>
+      </div>
+    </section>
+
+    <p class="acct-foot">账号与角色数据保存在工具箱云端；学习进度、生词本等仍保存在本机浏览器。请勿在演示环境录入真实学生敏感信息。</p>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@tencent-ai/workbuddy-cloud-sdk@dev/lib/index.global.js"></script>
+  <script src="assets/cloud-config.js"></script>
+  <script src="assets/account.js"></script>
+  <script src="assets/account-page.js"></script>
+</body>
+</html>

@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>后台管理 · 教师工具箱</title>
+<meta name="theme-color" content="#070c11">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%2343e08a'/%3E%3Ctext x='32' y='44' font-size='34' text-anchor='middle' fill='%2307140e' font-family='sans-serif'%3E%E7%AE%80%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="assets/portal.css">
+<link rel="stylesheet" href="assets/admin.css">
+</head>
+<body>
+
+<header class="site-header">
+  <div class="wrap">
+    <div class="logo">简</div>
+    <div class="brand-name">教师工具箱</div>
+    <div class="brand-sub">后台管理</div>
+    <div class="header-spacer"></div>
+    <a class="header-link" href="index.html" target="_blank" rel="noopener">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4h6v6M20 4l-9 9"/><path d="M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg>
+      <span>查看前台</span>
+    </a>
+    <button class="btn btn-sm" id="logoutBtn" hidden>退出登录</button>
+  </div>
+</header>
+
+<main class="wrap admin-wrap">
+
+  <!-- 未登录 -->
+  <section class="admin-card login-card" id="viewLogin">
+    <div class="card-kicker">ADMIN ACCESS</div>
+    <h2>管理员登录</h2>
+    <p class="card-desc">这里只管理工具箱首页的<strong>入口卡片</strong>。请用统一账号中心的手机号登录；管理员 / 超级管理员角色由「成员班级 → 成员审核」分配。</p>
+    <div class="tabs" id="channelTabs">
+      <button class="tab active" data-channel="email">邮箱验证码</button>
+      <button class="tab" data-channel="phone">手机号验证码</button>
+    </div>
+    <div class="field">
+      <label for="account" id="accountLabel">邮箱地址</label>
+      <input id="account" type="text" autocomplete="off" placeholder="请输入邮箱地址">
+    </div>
+    <button class="btn btn-sm" id="sendCode" type="button">获取验证码</button>
+    <div class="field" style="margin-top:14px">
+      <label for="code">验证码</label>
+      <input id="code" type="text" inputmode="numeric" autocomplete="off" placeholder="请输入收到的验证码">
+    </div>
+    <button class="btn btn-primary" id="verifyCode" type="button">登录</button>
+    <p class="msg" id="loginMsg"></p>
+    <p class="field-hint">浏览和使用前台工具<strong>不需要登录</strong>；只有这个后台需要。登录后会明确告诉你这个账号有没有管理权限。</p>
+  </section>
+
+  <!-- 已登录、正在核对身份 -->
+  <section class="admin-card login-card" id="viewChecking" hidden>
+    <div class="card-kicker">CHECKING</div>
+    <h2>正在核对管理员身份…</h2>
+    <p class="card-desc">登录成功，正在向云端确认这个账号是否为唯一管理员。</p>
+    <p class="msg" id="checkingMsg"></p>
+  </section>
+
+  <!-- 非管理员 / 读取失败（文案由脚本按结果填写） -->
+  <section class="admin-card login-card" id="viewDenied" hidden>
+    <div class="card-kicker" id="deniedKicker">NO PERMISSION</div>
+    <h2 id="deniedTitle">没有管理权限</h2>
+    <p class="card-desc" id="deniedDesc">当前登录的账号不是本应用的管理员。</p>
+    <div class="denied-actions">
+      <button class="btn btn-sm" id="retryBtn" hidden>重试</button>
+      <button class="btn btn-sm" id="switchAccountBtn">换个账号登录</button>
+      <a class="btn" href="index.html">返回工具箱首页</a>
+    </div>
+    <p class="msg" id="deniedMsg"></p>
+  </section>
+
+  <!-- 管理主界面 -->
+  <section id="viewAdmin" hidden>
+    <div class="admin-head">
+      <div>
+        <h2>工具入口管理</h2>
+        <p class="sub" id="adminSummary">保存后前台刷新即可看到变化</p>
+      </div>
+      <div class="grow"></div>
+      <button class="btn btn-sm" id="reloadBtn">↻ 刷新列表</button>
+      <button class="btn btn-primary btn-sm" id="addBtn">＋ 新增工具</button>
+    </div>
+    <div class="admin-who" id="adminWho"></div>
+    <div class="admin-table" id="toolList"></div>
+    <p class="admin-hint">「停用」只从前台隐藏，不会删除记录；删除后可用同样的 ID 重新添加。所有改动实时写入云端，前台刷新即可看到。</p>
+  </section>
+</main>
+
+<!-- 新增 / 编辑：常用 4 项置顶，外观类折叠 -->
+<div class="overlay" id="editOverlay">
+  <div class="modal">
+    <div class="modal-head"><h3 id="editTitle">新增工具</h3><button class="x" id="editClose" title="关闭">×</button></div>
+    <form id="editForm">
+      <div class="modal-body">
+        <p class="form-intro">只填 <b>ID、名称、链接、分类</b> 就能上架；外观和说明可稍后在「更多设置」里补。</p>
+        <div class="field-row">
+          <div class="field"><label for="fId">ID *（英文，不可重复）</label><input id="fId" required placeholder="word-flashcard"></div>
+          <div class="field"><label for="fName">名称 *</label><input id="fName" required placeholder="随机点名器"></div>
+        </div>
+        <div class="field"><label for="fUrl">工具链接 *</label><input id="fUrl" required placeholder="tools/new-tool/index.html 或 https://…"><div class="field-hint">站内工具填 tools/ 下的相对路径；外部网站填 https:// 完整网址，会自动在新窗口打开。</div></div>
+        <div class="field-row">
+          <div class="field"><label for="fCategory">分类</label><input id="fCategory" list="catList" placeholder="学科学习"><datalist id="catList"><option>班级管理</option><option>教务办公</option><option>学科学习</option><option>备课资源</option><option>其他</option></datalist></div>
+          <div class="field"><label for="fBadge">角标</label><input id="fBadge" placeholder="NEW / 演示版 / 留空"></div>
+        </div>
+        <label class="check-line"><input type="checkbox" id="fEnabled" checked> 在前台显示（上架）</label>
+
+        <details class="advanced" id="advancedBox">
+          <summary>更多设置（说明、外观、排序）</summary>
+          <div class="advanced-body">
+            <div class="field"><label for="fTagline">副标题</label><input id="fTagline" placeholder="课堂提问不重样"></div>
+            <div class="field"><label for="fDesc">功能说明</label><textarea id="fDesc" placeholder="一句话说明这个工具能做什么"></textarea></div>
+            <div class="field"><label for="fNote">使用提示（会显示在前台卡片上）</label><input id="fNote" placeholder="例：数据只存本机浏览器，请勿录入真实学生信息"><div class="field-hint">建议写清楚：是否需要登录、数据存在哪里，避免用错工具。</div></div>
+            <div class="field-row">
+              <div class="field"><label for="fIcon">封面图标</label><input id="fIcon" value="◈" maxlength="6" placeholder="◈"></div>
+              <div class="field"><label for="fMode">打开方式</label><select id="fMode"><option value="embed">站内内嵌</option><option value="window">新窗口打开</option></select><div class="field-hint">外部网址会自动用新窗口。</div></div>
+            </div>
+            <div class="field"><label for="fTags">标签（逗号分隔，最多 4 个）</label><input id="fTags" placeholder="点名, 课堂, 随机"></div>
+            <div class="field">
+              <label>封面配色</label>
+              <div class="color-row">
+                <input type="color" id="fC1" value="#1b5e46" title="起始色">
+                <input type="color" id="fC2" value="#3f9d78" title="结束色">
+                <input type="color" id="fC3" value="#43e08a" title="强调色">
+                <span class="field-hint" style="margin:0">起始 / 结束 / 强调</span>
+              </div>
+            </div>
+            <div class="field"><label for="fSort">排序（小号在前）</label><input id="fSort" type="number" value="9" min="0" max="999"></div>
+          </div>
+        </details>
+      </div>
+      <div class="modal-foot">
+        <button type="button" class="btn" id="editCancel">取消</button>
+        <button type="submit" class="btn btn-primary">保存到云端</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- 自定义确认（不使用系统弹窗） -->
+<div class="overlay" id="confirmOverlay">
+  <div class="modal" style="width:min(420px,100%)">
+    <div class="modal-head"><h3 id="confirmTitle">请确认</h3><button class="x" id="confirmClose">×</button></div>
+    <div class="modal-body"><p id="confirmText" style="color:var(--ink-2);margin:0"></p></div>
+    <div class="modal-foot"><button class="btn" id="confirmCancel">取消</button><button class="btn btn-primary" id="confirmOk">确定</button></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@tencent-ai/workbuddy-cloud-sdk@dev/lib/index.global.js"></script>
+<script src="assets/cloud-config.js"></script>
+<script src="assets/admin.js"></script>
+</body>
+</html>

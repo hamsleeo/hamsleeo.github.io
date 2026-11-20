@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>单词记忆卡 · 单词精灵岛</title>
+<link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+
+<!-- 线性图标库：全站不用 emoji，统一使用简洁线性 SVG -->
+<svg class="svg-sprite" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+  <symbol id="i-heart" viewBox="0 0 24 24"><path d="M12 20.5 4.3 13a4.8 4.8 0 0 1 0-6.8 4.8 4.8 0 0 1 6.8 0l.9.9.9-.9a4.8 4.8 0 0 1 6.8 0 4.8 4.8 0 0 1 0 6.8Z"/></symbol>
+  <symbol id="i-volume" viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9H4Z"/><path d="M16.5 8.5a5 5 0 0 1 0 7"/><path d="M19 6a8.5 8.5 0 0 1 0 12"/></symbol>
+  <symbol id="i-shuffle" viewBox="0 0 24 24"><path d="M3 6h3.5c1.8 0 2.7.9 4 2.6l3.5 4.8c1.2 1.7 2.2 2.6 4 2.6H21"/><path d="m18 13 3 3-3 3"/><path d="M3 18h3.5c1.8 0 2.7-.9 4-2.6l.8-1.1"/><path d="M14.2 9.4l.8-1.1C16.2 6.9 17.2 6 19 6h2"/><path d="m18 3 3 3-3 3"/></symbol>
+  <symbol id="i-book" viewBox="0 0 24 24"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v16H6.5A2.5 2.5 0 0 0 4 21V5.5Z"/><path d="M4 18.5A2.5 2.5 0 0 1 6.5 16H20"/></symbol>
+  <symbol id="i-chart" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 12h6l3-5 3 8 2-3h4"/></symbol>
+  <symbol id="i-close" viewBox="0 0 24 24"><path d="M5 5 19 19M19 5 5 19"/></symbol>
+  <symbol id="i-star" viewBox="0 0 24 24"><path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2L12 17.3 6.4 20.2l1.1-6.2L3 9.6l6.2-.9L12 3Z"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="m4 12 5 5L20 6"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M5 5 19 19M19 5 5 19"/></symbol>
+  <symbol id="i-play" viewBox="0 0 24 24"><path d="m7 4 12 8-12 8V4Z"/></symbol>
+  <symbol id="i-grid" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></symbol>
+  <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M20 7v5h-5"/><path d="M19 12a7 7 0 1 1-2-5"/><path d="m17 4 3 3-3 3"/></symbol>
+  <symbol id="i-left" viewBox="0 0 24 24"><path d="M15 5 8 12l7 7"/></symbol>
+  <symbol id="i-pencil" viewBox="0 0 24 24"><path d="M4 20h4l11-11-4-4L4 16v4Z"/><path d="m13.5 6.5 4 4"/></symbol>
+  <symbol id="i-trophy" viewBox="0 0 24 24"><path d="M7 4h10v5a5 5 0 0 1-10 0V4Z"/><path d="M7 6H4v2a3 3 0 0 0 3 3M17 6h3v2a3 3 0 0 1-3 3"/><path d="M12 14v4M8 21h8M9 18h6"/></symbol>
+  <symbol id="i-layers" viewBox="0 0 24 24"><path d="m12 3 9 5-9 5-9-5 9-5Z"/><path d="m3 12 9 5 9-5M3 16l9 5 9-5"/></symbol>
+  <symbol id="i-flip" viewBox="0 0 24 24"><path d="M4 8a8 8 0 0 1 14-3l2 2"/><path d="m20 3 0 4-4 0"/><path d="M20 16a8 8 0 0 1-14 3l-2-2"/><path d="m4 21 0-4 4 0"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m16 16 5 5"/></symbol>
+</svg>
+
+<header class="topbar">
+  <div class="brand">
+    <div class="brand-mark"><svg><use href="#i-layers"></use></svg></div>
+    <div>
+      <h1>单词记忆卡</h1>
+      <p>单词精灵岛 · 全量词库版 <span id="libCount">—</span></p>
+    </div>
+  </div>
+  <div class="top-stats">
+    <div class="stat"><span class="stat-num" id="statMastered">0</span><span class="stat-lab">已记住</span></div>
+    <div class="stat"><span class="stat-num" id="statFav">0</span><span class="stat-lab">生词本</span></div>
+    <div class="stat"><span class="stat-num" id="statSprite">0</span><span class="stat-lab">精灵</span></div>
+    <a class="ghost-btn" href="index.html" title="返回单词精灵岛（原版完整玩法）"><svg><use href="#i-layers"></use></svg><span>精灵岛</span></a>
+    <button class="ghost-btn" id="btnBack" title="返回教师工具箱"><svg><use href="#i-left"></use></svg><span>工具箱</span></button>
+  </div>
+</header>
+
+<nav class="scope-bar" aria-label="词库筛选">
+  <div class="scope-line">
+    <span class="scope-label">册</span>
+    <div class="chips scroll-x" id="bookChips"></div>
+  </div>
+  <div class="scope-line">
+    <span class="scope-label">单元</span>
+    <div class="chips scroll-x" id="unitChips"></div>
+  </div>
+</nav>
+
+<section class="progress-row">
+  <div class="progress-wrap">
+    <div class="progress-top">
+      <span id="scopeName">—</span>
+      <span id="progressText">已记住 0 / 0</span>
+    </div>
+    <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+  </div>
+  <button class="soft-btn" id="btnMap"><svg><use href="#i-chart"></use></svg><span>串起来看</span></button>
+  <button class="soft-btn" id="btnDictation"><svg><use href="#i-pencil"></use></svg><span>开始听写</span></button>
+</section>
+
+<main id="mainStage">
+  <div class="card-stage">
+    <div class="flashcard" id="flashcard">
+      <div class="card-inner" id="cardInner">
+        <div class="card-face card-front">
+          <button class="corner-btn fav-btn" id="btnFav" title="加入生词本" aria-label="加入生词本"><svg><use href="#i-heart"></use></svg></button>
+          <button class="corner-btn speak-btn" id="btnSpeak" title="朗读单词" aria-label="朗读单词"><svg><use href="#i-volume"></use></svg></button>
+          <div class="card-meta"><span id="cardTag">—</span><span id="cardSeen"></span></div>
+          <div class="word-wrap" id="wordWrap"></div>
+          <div class="phonetic" id="phonetic"></div>
+          <div class="card-hint">点卡片翻到背面</div>
+        </div>
+        <div class="card-face card-back">
+          <div class="card-meta"><span id="backTag">—</span><span>释义 · 例句</span></div>
+          <div class="back-word" id="backWord"></div>
+          <div class="meaning" id="meaning"></div>
+          <div class="example" id="example"></div>
+          <div class="tips" id="tips"></div>
+        </div>
+      </div>
+    </div>
+    <p class="scope-note" id="scopeNote"></p>
+  </div>
+
+  <div class="action-row" id="actionRow">
+    <button class="primary-btn" id="btnFlip"><svg><use href="#i-flip"></use></svg><span>翻转卡片</span></button>
+    <button class="normal-btn" id="btnNext"><svg><use href="#i-shuffle"></use></svg><span>随机下一个</span></button>
+    <button class="normal-btn" id="btnFavList"><svg><use href="#i-book"></use></svg><span>查看生词本</span></button>
+  </div>
+  <div class="judge-row" id="judgeRow" hidden>
+    <button class="judge-btn no" id="btnForgot"><svg><use href="#i-refresh"></use></svg><span>没记住</span></button>
+    <button class="judge-btn yes" id="btnKnown"><svg><use href="#i-check"></use></svg><span>记住了</span></button>
+  </div>
+</main>
+
+<section class="legacy-bar">
+  <span class="legacy-title">单词精灵岛 · 原版完整玩法</span>
+  <a class="legacy-btn" href="index.html#/pages/index/index"><svg><use href="#i-layers"></use></svg><span>闯关首页</span></a>
+  <a class="legacy-btn" href="index.html#/pages/units/units"><svg><use href="#i-search"></use></svg><span>自由闯关</span></a>
+  <a class="legacy-btn" href="index.html#/pages/usage/usage"><svg><use href="#i-pencil"></use></svg><span>词汇运用</span></a>
+  <a class="legacy-btn" href="index.html#/pages/roots/roots"><svg><use href="#i-grid"></use></svg><span>词根拼读</span></a>
+  <a class="legacy-btn" href="index.html#/pages/grammar/grammar"><svg><use href="#i-book"></use></svg><span>语法闯关</span></a>
+  <a class="legacy-btn" href="index.html#/pages/words/words"><svg><use href="#i-chart"></use></svg><span>完整词表</span></a>
+  <a class="legacy-btn" href="index.html#/pages/review/review"><svg><use href="#i-refresh"></use></svg><span>复习岛</span></a>
+  <a class="legacy-btn" href="index.html#/pages/me/me"><svg><use href="#i-star"></use></svg><span>我的 / 班级</span></a>
+  <span class="legacy-note">闯关题数按本单元全部词汇生成，不再只有 6 道</span>
+</section>
+
+<footer class="footer">
+  <span>数据保存在本机浏览器，刷新不丢失 · 例句与记忆窍门由规则程序生成 · 图标为线性 SVG</span>
+</footer>
+
+<div id="modalRoot"></div>
+<div id="toast" class="toast" hidden></div>
+<div id="speakNote" class="speak-note" hidden></div>
+
+<script src="js/audio-fix.js"></script>
+<script src="data/flash-data.js"></script>
+<script src="js/engine.js"></script>
+<script src="js/app.js"></script>
+<script>if (location.search.indexOf('selftest=1') >= 0 || location.search.indexOf('shot=') >= 0) { document.write('<script src="js/selftest.js"><\/script>'); }</script>
+</body>
+</html>

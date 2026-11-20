@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>修仙班级 · 班级管理</title>
+    <meta name="theme-color" content="#3d3226" />
+    <meta name="description" content="修仙主题班级管理：洞府名册、功过记录、考勤请假、修为排行，数据云端同步。" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="修仙班级" />
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="./assets/icon-192.png" />
+    <link rel="icon" href="./assets/icon-192.png" />
+    <link rel="stylesheet" href="./css/app.css?v=5" />
+    <script src="https://cdn.jsdelivr.net/npm/@tencent-ai/workbuddy-cloud-sdk@dev/lib/index.global.js"></script>
+</head>
+<body>
+    <div class="shell">
+        <header class="topbar" id="topbar">
+            <div class="topbar-main">
+                <div class="topbar-title" id="topTitle">修仙班级</div>
+                <div class="topbar-sub" id="topSub">正在进入…</div>
+            </div>
+            <div class="topbar-actions" id="topActions"></div>
+        </header>
+
+        <main class="view" id="view">
+            <div class="state">
+                <div class="state-icon">⛰️</div>
+                <div class="state-text">正在开启洞府…</div>
+            </div>
+        </main>
+
+        <nav class="tabbar" id="tabbar" hidden>
+            <a class="tab" data-nav="qingjia" href="#/qingjia"><span class="tab-icon">📜</span><span class="tab-text">请假</span></a>
+            <a class="tab" data-nav="kaoqin" href="#/kaoqin"><span class="tab-icon">🗓️</span><span class="tab-text">考勤</span></a>
+            <a class="tab" data-nav="dongfu" href="#/dongfu"><span class="tab-icon">⛰️</span><span class="tab-text">洞府</span></a>
+            <a class="tab" data-nav="gongguo" href="#/gongguo"><span class="tab-icon">⚖️</span><span class="tab-text">功过</span></a>
+            <a class="tab" data-nav="xiuwei" href="#/xiuwei"><span class="tab-icon">✨</span><span class="tab-text">修为</span></a>
+        </nav>
+    </div>
+
+    <div class="layer" id="layer" hidden></div>
+    <div class="toast" id="toast" hidden></div>
+
+    <script src="./js/core.js?v=5"></script>
+    <script src="./js/data.js?v=5"></script>
+    <script src="./js/auth.js?v=5"></script>
+    <script src="./js/views.js?v=5"></script>
+    <script src="./js/app.js?v=5"></script>
+</body>
+</html>

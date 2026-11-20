@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>工具 · 教师工具箱</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%2343e08a'/%3E%3Ctext x='32' y='44' font-size='34' text-anchor='middle' fill='%2307140e' font-family='sans-serif'%3E%E7%AE%80%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="assets/portal.css">
+</head>
+<body class="viewer">
+
+<div class="viewer-bar">
+  <a class="viewer-back" href="index.html">← 返回工具箱</a>
+  <span style="color:#31443d">|</span>
+  <div class="viewer-title" id="title">正在打开工具…</div>
+  <div class="grow"></div>
+  <button class="btn btn-sm" id="refresh">↻ 刷新</button>
+  <a class="btn btn-sm" id="newwin" href="#" target="_blank" rel="noopener">↗ 新窗口打开</a>
+</div>
+
+<div class="viewer-note" id="viewerNote" hidden><i></i><span id="viewerNoteText"></span></div>
+<iframe class="viewer-frame" id="frame" title="工具内容" allow="fullscreen; autoplay; clipboard-read; clipboard-write"></iframe>
+<div class="viewer-error" id="error" hidden></div>
+<div class="toast" id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@tencent-ai/workbuddy-cloud-sdk@dev/lib/index.global.js"></script>
+<script src="assets/cloud-config.js"></script>
+<script src="assets/tools.js"></script>
+<script src="assets/portal.js"></script>
+<script>
+(function () {
+  var id = new URLSearchParams(location.search).get('tool');
+  var frame = document.getElementById('frame');
+  var err = document.getElementById('error');
+
+  window.TBox.loadTools().then(function () {
+    var t = id ? window.TBox.find(id) : null;
+    if (!t) {
+      frame.hidden = true;
+      err.hidden = false;
+      err.innerHTML = '<h2>没有找到这个工具</h2><p>入口可能已在后台下线或链接失效。</p>' +
+        '<a class="btn btn-primary" href="index.html">返回工具箱</a>';
+      document.getElementById('title').textContent = '工具不存在';
+      return;
+    }
+    var url = window.TBox.safeUrl(t.url);
+    document.title = t.name + ' · 教师工具箱';
+    if (t.note) {
+      document.getElementById('viewerNoteText').innerHTML =
+        '<b>使用提示</b> · ' + window.TBox.esc(t.note);
+      document.getElementById('viewerNote').hidden = false;
+    }
+    document.getElementById('title').innerHTML = window.TBox.esc(t.icon || '◈') + ' ' + window.TBox.esc(t.name) +
+      '<span>' + window.TBox.esc(t.category || '') + (t.mode === 'window' ? ' · 云端工具' : '') + '</span>';
+    frame.src = url;
+    document.getElementById('newwin').href = url;
+    document.getElementById('refresh').addEventListener('click', function () {
+      try { frame.contentWindow.location.reload(); }
+      catch (e) { frame.src = url + (url.indexOf('?') >= 0 ? '&' : '?') + '_t=' + Date.now(); }
+    });
+    frame.addEventListener('load', function () {
+      try { void frame.contentDocument; }
+      catch (e) { window.TBox.toast('该站点不允许内嵌，请点右上角「新窗口打开」'); }
+    });
+  });
+})();
+</script>
+</body>
+</html>
