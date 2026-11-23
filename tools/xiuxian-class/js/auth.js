@@ -264,6 +264,9 @@
     function friendlyAuthError(error) {
         var raw = (error && (error.message || error.error_description || error.code)) || '';
         var text = String(raw);
+        if (/access_denied|origin is not allowed/i.test(text)) {
+            return '当前网页环境未获云端授权，无法登录。请用小程序进入，或等本工具迁移到统一账号后再试';
+        }
         if (/invalid_client|credential is invalid/i.test(text)) {
             return '云端凭证无效，请联系管理员检查应用配置';
         }

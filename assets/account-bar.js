@@ -14,7 +14,22 @@
   bar.innerHTML = '<span>账号状态加载中…</span>';
   document.body.insertBefore(bar, document.body.firstChild);
 
-  function link(text, url) { return '<a href="' + A.share(url) + '">' + text + '</a>'; }
+  /* 工具页在 tools/xxx/ 下，账号页却在站点根目录。
+     用相对路径 account.html 会被浏览器解析成 tools/xxx/account.html → 404，
+     因此按本脚本所在位置算出站点根，并强制 target="_top" 跳出 iframe。 */
+  var root = (function () {
+    var src = (script && script.src) || '';
+    var i = src.lastIndexOf('/assets/');
+    if (i >= 0) return src.slice(0, i);
+    var here = location.href.split('?')[0];
+    var m = here.match(/^(.*)\/tools\/[^/]+\/[^/]*$/);
+    if (m) return m[1];
+    return here.replace(/[^/]*$/, '').replace(/\/$/, '');
+  })();
+  function link(text, path) {
+    var url = root + '/' + String(path || '').replace(/^\/+/, '');
+    return '<a href="' + esc(A.share(url)) + '" target="_top">' + text + '</a>';
+  }
   function esc(s) {
     return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
       return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c];

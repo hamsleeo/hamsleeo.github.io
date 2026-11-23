@@ -1,0 +1,16 @@
+# 平台本地元数据（含 appId 与本机绝对路径，不入库）
+.workbuddy/
+*.genie
+
+# 本机 / 编辑器 / 系统临时文件
+Thumbs.db
+.DS_Store
+*.bak
+*.tmp
+.vscode/
+.idea/
+
+# 临时验证页（正式自检脚本 selftest.js / fusion-selftest.js 要保留）
+_selftest-*.html
+online-*.html
+tmp-edge-*/

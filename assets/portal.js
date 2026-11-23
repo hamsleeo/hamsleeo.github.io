@@ -31,8 +31,31 @@
       icon: r.icon || '◈', category: r.category || '其他',
       tags: Array.isArray(r.tags) ? r.tags : [], badge: r.badge || '',
       colors: Array.isArray(r.colors) ? r.colors : ['#1b5e46', '#3f9d78', '#43e08a'],
-      url: r.url, mode: r.mode || 'embed', note: r.note || ''
+      url: r.url, mode: r.mode || 'embed', note: r.note || '',
+      bundled: false
     };
+  }
+  /* 随站点内置的外部资源（assets/tools.js 里标了 bundled:true 的条目）不依赖云端 tools 表。
+     云端读取成功时，把云端没有同 ID 记录的内置条目补进列表：新增一个外部资源
+     只需改代码并发布，不必先取得数据库写入权限。
+     管理员若在后台用同一个 ID 建了记录，则以云端记录为准（可改文案、排序、停用）。 */
+  function mergeBundled(rows) {
+    var list = rows.map(mapRow);
+    var ids = {};
+    list.forEach(function (t) { ids[t.id] = 1; });
+    (window.TOOLBOX_FALLBACK || []).forEach(function (t) {
+      if (!t.bundled || ids[t.id]) return;
+      ids[t.id] = 1;
+      list.push({
+        id: t.id, name: t.name, tagline: t.tagline || '', desc: t.desc || '',
+        icon: t.icon || '◈', category: t.category || '其他',
+        tags: Array.isArray(t.tags) ? t.tags : [], badge: t.badge || '',
+        colors: Array.isArray(t.colors) ? t.colors : ['#1b5e46', '#3f9d78', '#43e08a'],
+        url: t.url, mode: t.mode || 'window', note: t.note || '',
+        bundled: true
+      });
+    });
+    return list;
   }
   function find(id) {
     for (var i = 0; i < TOOLS.length; i++) if (TOOLS[i].id === id) return TOOLS[i];
@@ -72,7 +95,7 @@
     return (dt.getMonth() + 1) + '/' + dt.getDate();
   }
 
-  /* 云端读取：成功即以云端为准（哪怕表被清空），失败才回退到内置清单 */
+  /* 云端读取：成功即以云端为准，并补上内置外部资源；失败才回退到内置清单 */
   function loadTools() {
     var cloud = window.WFC_CLOUD;
     if (!cloud) { cloudError = window.WFC_CLOUD_ERROR || '云服务未连接'; return Promise.resolve(TOOLS); }
@@ -81,7 +104,7 @@
       .then(function (res) {
         if (res.error) throw res.error;
         var rows = Array.isArray(res.data) ? res.data : [];
-        TOOLS = rows.map(mapRow);
+        TOOLS = mergeBundled(rows);
         source = 'cloud';
         cloudError = null;
         return TOOLS;
@@ -95,6 +118,7 @@
   window.TBox = {
     esc: esc, safeUrl: safeUrl, find: find, getAll: getAll,
     openTool: openTool, toast: toast, timeAgo: timeAgo, loadTools: loadTools,
+    mergeBundled: mergeBundled, isExternal: isExternal, openMode: openMode,
     getSource: function () { return source; }, getCloudError: function () { return cloudError; }
   };
 
@@ -105,6 +129,7 @@
      不要藏在 badge 的 title 里（手机上根本没有悬停）。 */
   function accessLabel(t) {
     var s = (t.note || '') + ' ' + (t.badge || '') + ' ' + (t.desc || '');
+    if (/外部站点|第三方站点|teacherlab\.cn/i.test(s)) return { text: '外部站点 · 数据不进本平台', cls: 'external' };
     if (/尚未打通|独立账号|需要.*登录|登录云端|云端账号/.test(s)) return { text: '需单独登录', cls: 'login' };
     if (/演示|模拟数据|预览版/.test(s)) return { text: '演示版 · 本机数据', cls: 'demo' };
     if (/统一账号|手机注册/.test(s)) return { text: '统一账号 · 手机注册', cls: 'login' };

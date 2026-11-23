@@ -85,6 +85,7 @@
     <div class="admin-who" id="adminWho"></div>
     <div class="admin-table" id="toolList"></div>
     <p class="admin-hint">「停用」只从前台隐藏，不会删除记录；删除后可用同样的 ID 重新添加。所有改动实时写入云端，前台刷新即可看到。</p>
+    <p class="admin-hint">前台另有四张<strong>随站点内置的卡片</strong>，写在 <code>assets/tools.js</code> 中、不占数据库记录，所以不会出现在上面的表格里：三张外部资源（<code>teacherlab-score</code> 成绩分析、<code>teacherlab-class-points</code> 班级积分、<code>teacherlab-physics-lab</code> 物理实验实时大屏）和一张本平台自研工具（<code>ppt-crop</code> 习题 PPT）。要改它们的文案或排序，用对应 ID 在「新增工具」里建一条记录即可覆盖；要彻底移除请改代码。</p>
   </section>
 </main>
 

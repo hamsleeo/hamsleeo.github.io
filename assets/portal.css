@@ -204,6 +204,7 @@ button { cursor: pointer; }
 .access-tag.login { color: #ffd28a; background: rgba(224, 160, 60, .12); border: 1px solid rgba(224, 160, 60, .3); }
 .access-tag.demo  { color: #ffb4b4; background: rgba(224, 90, 90, .10); border: 1px solid rgba(224, 90, 90, .28); }
 .access-tag.local { color: var(--green-2); background: rgba(67, 224, 138, .09); border: 1px solid rgba(67, 224, 138, .24); }
+.access-tag.external { color: #a9d9ff; background: rgba(90, 160, 224, .10); border: 1px solid rgba(90, 160, 224, .28); }
 .card-note {
   color: var(--ink-3); font-size: 11.5px; line-height: 1.6;
   border-left: 2px solid rgba(67, 224, 138, .35); padding-left: 9px; margin: -6px 0 14px;
