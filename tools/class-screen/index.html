@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>班级班务大屏 · 915班</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div id="viewport">
+    <div id="screen">
+      <div class="wallpaper" id="wallpaper">
+        <div class="wallpaper-glow glow-a"></div>
+        <div class="wallpaper-glow glow-b"></div>
+        <div class="wallpaper-grid"></div>
+      </div>
+
+      <!-- 左侧桌面图标区 -->
+      <aside class="desk-rail">
+        <div class="desk-icons" id="deskIcons"></div>
+        <div class="rail-brand">
+          <div class="rail-slogan" id="railSlogan">我们班最棒</div>
+          <svg class="rail-art" viewBox="0 0 220 190" aria-hidden="true">
+            <defs>
+              <linearGradient id="bookGrad" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#f6d79a"/><stop offset="100%" stop-color="#e8a86b"/>
+              </linearGradient>
+              <linearGradient id="skinGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#f3c9a2"/><stop offset="100%" stop-color="#dda77f"/>
+              </linearGradient>
+            </defs>
+            <ellipse cx="110" cy="172" rx="92" ry="12" fill="rgba(0,0,0,.18)"/>
+            <g transform="translate(20,24)">
+              <path d="M52 118 Q84 100 110 118 L110 158 Q82 142 52 158 Z" fill="url(#bookGrad)"/>
+              <path d="M168 118 Q136 100 110 118 L110 158 Q138 142 168 158 Z" fill="#f0c184"/>
+              <path d="M55 121 Q84 105 107 121 L107 153 Q82 139 55 154 Z" fill="#fff8ea" opacity=".88"/>
+              <path d="M165 121 Q136 105 113 121 L113 153 Q138 139 165 154 Z" fill="#fff8ea" opacity=".88"/>
+              <g stroke="#d9b28c" stroke-width="2" opacity=".7">
+                <path d="M64 127 Q84 119 101 127"/><path d="M64 135 Q84 127 101 135"/>
+                <path d="M119 127 Q136 119 156 127"/><path d="M119 135 Q136 127 156 135"/>
+              </g>
+            </g>
+            <g transform="translate(0,6)">
+              <circle cx="56" cy="72" r="22" fill="url(#skinGrad)"/>
+              <path d="M32 70 Q32 44 57 44 Q82 44 80 70 Q70 58 56 58 Q42 58 32 70Z" fill="#4c3b3a"/>
+              <path d="M34 96 Q56 82 78 96 L84 138 Q56 150 28 138Z" fill="#6f9bb5"/>
+              <circle cx="162" cy="76" r="20" fill="url(#skinGrad)"/>
+              <path d="M140 74 Q140 50 162 50 Q184 50 184 74 Q174 62 162 62 Q150 62 140 74Z" fill="#3f3230"/>
+              <path d="M142 98 Q162 84 182 98 L188 138 Q162 150 136 138Z" fill="#c78d76"/>
+              <circle cx="92" cy="112" r="16" fill="url(#skinGrad)"/>
+              <path d="M76 110 Q76 92 92 92 Q108 92 108 110 Q100 100 92 100 Q84 100 76 110Z" fill="#513b32"/>
+              <path d="M78 132 Q92 122 106 132 L110 152 Q92 160 74 152Z" fill="#e8b86a"/>
+              <circle cx="134" cy="114" r="15" fill="url(#skinGrad)"/>
+              <path d="M119 112 Q119 94 134 94 Q149 94 149 112 Q142 102 134 102 Q126 102 119 112Z" fill="#6b4b38"/>
+              <path d="M121 134 Q134 124 147 134 L151 153 Q134 161 117 153Z" fill="#89b6a2"/>
+            </g>
+          </svg>
+        </div>
+      </aside>
+
+      <!-- 主舞台 -->
+      <main class="stage">
+        <header class="topbar">
+          <div class="class-badge">
+            <span class="badge-dot"></span>
+            <span id="className">915班</span>
+            <span class="badge-sub">CLASS · 2026</span>
+          </div>
+          <div class="top-quote"><span class="quote-mark">“</span><span id="topQuote">睡个安稳觉，明天才有清楚的头脑去做在意的事。</span></div>
+          <div class="top-right">
+            <span class="sync-status" id="syncStatus">云端连接中…</span>
+            <div class="clock-box">
+              <div class="clock-time" id="clockTime">08:42:04</div>
+              <div class="clock-date" id="clockDate">2026年11月23日 星期一</div>
+            </div>
+            <button class="top-btn" id="btnScore" title="快捷点评"><span>✦</span> 快捷点评</button>
+            <button class="top-btn" id="btnEdit" title="布局编辑"><span>✎</span> 编辑</button>
+            <button class="top-btn icon-only" id="btnFull" title="全屏显示">⛶</button>
+          </div>
+        </header>
+
+        <div class="dashboard-grid" id="dashboardGrid">
+          <!-- 今日课程表 -->
+          <section class="panel panel-schedule" data-module="schedule">
+            <div class="panel-head"><span class="head-icon">▦</span><h2>今日课程表</h2><span class="head-sub" id="scheduleWeek">第 13 周</span><div class="head-actions"></div></div>
+            <div class="schedule-strip" id="scheduleStrip"></div>
+          </section>
+
+          <!-- 当前课程 -->
+          <section class="panel panel-current" data-module="current">
+            <div class="panel-head"><span class="head-icon">◷</span><h2>当前课程</h2><div class="head-actions"></div></div>
+            <div class="current-body" id="currentBody"></div>
+          </section>
+
+          <!-- 今日作业 -->
+          <section class="panel panel-homework" data-module="homework">
+            <div class="panel-head"><span class="head-icon">✎</span><h2>今日作业</h2><div class="head-actions"></div></div>
+            <div class="hw-tabs" id="hwTabs"></div>
+            <div class="hw-list" id="hwList"></div>
+          </section>
+
+          <!-- 今日值日 -->
+          <section class="panel panel-duty" data-module="duty">
+            <div class="panel-head"><span class="head-icon">✧</span><h2>今日值日</h2><div class="head-actions"></div></div>
+            <div class="duty-list" id="dutyList"></div>
+          </section>
+
+          <!-- 事件倒计时 -->
+          <section class="panel panel-countdown" data-module="countdown">
+            <div class="panel-head"><span class="head-icon">⌛</span><h2>事件倒计时</h2><div class="head-actions"></div></div>
+            <div class="countdown-body" id="countdownBody"></div>
+          </section>
+
+          <!-- 积分总览 -->
+          <section class="panel panel-overview" data-module="overview">
+            <div class="panel-head"><span class="head-icon">▧</span><h2>班级积分总览</h2><span class="head-sub">德育六维</span><div class="head-actions"></div></div>
+            <div class="overview-body" id="overviewBody"></div>
+          </section>
+
+          <!-- 六维雷达 -->
+          <section class="panel panel-radar" data-module="radar">
+            <div class="panel-head"><span class="head-icon">◇</span><h2>六维成长画像</h2><div class="head-actions"></div></div>
+            <div class="radar-body" id="radarBody"></div>
+          </section>
+
+          <!-- 小组排行 -->
+          <section class="panel panel-groups" data-module="groups">
+            <div class="panel-head"><span class="head-icon">♛</span><h2>小组积分榜</h2><div class="head-actions"></div></div>
+            <div class="group-list" id="groupList"></div>
+          </section>
+
+          <!-- 今日榜样 -->
+          <section class="panel panel-models" data-module="models">
+            <div class="panel-head"><span class="head-icon">★</span><h2>今日榜样</h2><div class="head-actions"></div></div>
+            <div class="model-list" id="modelList"></div>
+          </section>
+
+          <!-- 今日消消乐 -->
+          <section class="panel panel-fun" data-module="fun">
+            <div class="panel-head"><span class="head-icon">✓</span><h2>今日消消乐</h2><span class="head-sub">作业完成进度</span><div class="head-actions"></div></div>
+            <div class="fun-list" id="funList"></div>
+          </section>
+
+          <!-- 公告栏 -->
+          <section class="panel panel-notice" data-module="notice">
+            <div class="panel-head"><span class="head-icon">◈</span><h2>公告栏</h2><div class="head-actions"></div></div>
+            <div class="notice-list" id="noticeList"></div>
+          </section>
+
+          <!-- 需关注与流水 -->
+          <section class="panel panel-attention" data-module="attention">
+            <div class="panel-head"><span class="head-icon">◉</span><h2>需关注 · 近期流水</h2><div class="head-actions"></div></div>
+            <div class="attention-body" id="attentionBody"></div>
+          </section>
+        </div>
+      </main>
+
+      <!-- 手机喊话弹层 -->
+      <div class="shout-overlay" id="shoutOverlay" aria-live="assertive">
+        <div class="shout-banner">
+          <div class="shout-ring"></div>
+          <div class="shout-icon">📢</div>
+          <div class="shout-meta"><span class="shout-label">班主任喊话</span><span class="shout-from" id="shoutFrom"></span></div>
+          <div class="shout-text" id="shoutTextDisplay"></div>
+          <div class="shout-unlock-hint" id="shoutUnlockHint" style="display:none">🔊 点一下屏幕开启语音</div>
+          <div class="shout-progress"><span id="shoutProgressBar"></span></div>
+        </div>
+      </div>
+
+      <!-- 编辑工具条 -->
+      <div class="edit-toolbar" id="editToolbar">
+        <span class="edit-indicator">布局编辑中 · 拖拽卡片可调整顺序</span>
+        <button class="et-btn" id="btnAddModule">＋ 添加模块</button>
+        <button class="et-btn" id="btnResetLayout">重置布局</button>
+        <button class="et-btn primary" id="btnSaveEdit">完成编辑</button>
+      </div>
+
+      <!-- 设置抽屉 -->
+      <div class="drawer settings-drawer" id="settingsDrawer">
+        <div class="drawer-head">
+          <div><h3>大屏设置</h3><p>布局 · 主题 · 数据</p></div>
+          <button class="drawer-close" data-close="settingsDrawer">×</button>
+        </div>
+        <div class="drawer-tabs" id="settingsTabs">
+          <button class="dtab active" data-tab="layout">布局</button>
+          <button class="dtab" data-tab="theme">主题</button>
+          <button class="dtab" data-tab="data">数据</button>
+        </div>
+        <div class="drawer-content">
+          <div class="dtab-pane active" data-pane="layout">
+            <div class="field"><label>左侧留白 <span id="valLeft">20%</span></label><input type="range" id="marginLeft" min="0" max="30" value="20" /></div>
+            <div class="field"><label>右侧留白 <span id="valRight">0%</span></label><input type="range" id="marginRight" min="0" max="20" value="0" /></div>
+            <div class="field"><label>顶部留白 <span id="valTop">0%</span></label><input type="range" id="marginTop" min="0" max="15" value="0" /></div>
+            <div class="field"><label>底部留白 <span id="valBottom">0%</span></label><input type="range" id="marginBottom" min="0" max="15" value="0" /></div>
+            <div class="field"><label>整体缩放 <span id="valZoom">100%</span></label><input type="range" id="zoomRange" min="70" max="130" value="100" /></div>
+            <button class="mini-btn" id="btnClearMargin">清除留白</button>
+            <div class="divider"></div>
+            <h4>显示模块</h4>
+            <div class="module-toggles" id="moduleToggles"></div>
+          </div>
+          <div class="dtab-pane" data-pane="theme">
+            <div class="field"><label>班级名称</label><input type="text" id="inputClassName" /></div>
+            <div class="field"><label>班级寄语</label><input type="text" id="inputSlogan" /></div>
+            <div class="field"><label>顶部一句话</label><input type="text" id="inputQuote" /></div>
+            <div class="divider"></div>
+            <h4>主题配色</h4>
+            <div class="theme-swatches" id="themeSwatches"></div>
+            <h4>背景壁纸</h4>
+            <div class="wallpaper-choices" id="wallpaperChoices"></div>
+          </div>
+          <div class="dtab-pane" data-pane="data">
+            <p class="hint">数据保存在本机浏览器中，可导出 JSON 备份后在其他电脑导入。</p>
+            <button class="wide-btn" id="btnExport">导出数据 JSON</button>
+            <label class="wide-btn file-btn">导入数据 JSON<input type="file" id="fileImport" accept="application/json" /></label>
+            <button class="wide-btn danger" id="btnResetData">恢复演示数据</button>
+            <div class="divider"></div>
+            <h4>数据来源</h4>
+            <p class="hint">班务布局参考「行为簿 · 班务大屏」；积分体系参考 TeacherLab 班级积分的德育六维、行为库与操作流水。</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- 快捷点评抽屉 -->
+      <div class="drawer score-drawer" id="scoreDrawer">
+        <div class="drawer-head">
+          <div><h3>快捷点评</h3><p>选择学生 · 选行为 · 加减分</p></div>
+          <button class="drawer-close" data-close="scoreDrawer">×</button>
+        </div>
+        <div class="drawer-content score-content">
+          <div class="field"><label>搜索学生</label><input type="text" id="studentSearch" placeholder="输入姓名或学号" /></div>
+          <div class="student-picker" id="studentPicker"></div>
+          <div class="divider"></div>
+          <div class="score-mode">
+            <button class="mode-btn active" data-mode="plus">加 分</button>
+            <button class="mode-btn" data-mode="minus">扣 分</button>
+          </div>
+          <div class="dim-tabs" id="dimTabs"></div>
+          <div class="behavior-chips" id="behaviorChips"></div>
+          <div class="field"><label>理由 / 描述（可选）</label><input type="text" id="customReason" placeholder="如：积极组织班级活动" /></div>
+          <button class="wide-btn primary" id="btnSubmitScore">确认点评</button>
+          <div class="divider"></div>
+          <h4>最近记录</h4>
+          <div class="recent-log" id="recentLog"></div>
+        </div>
+      </div>
+
+      <div class="drawer-mask" id="drawerMask"></div>
+      <div class="modal-root" id="modalRoot"></div>
+      <div class="toast-root" id="toastRoot"></div>
+    </div>
+  </div>
+
+  <!-- 班主任登录层 -->
+  <div class="login-overlay" id="loginOverlay">
+    <div class="login-card">
+      <div class="login-badge">班主任工作台</div>
+      <h2>班级班务大屏 · 管理端</h2>
+      <p class="login-sub">登录后修改课程、作业、公告与积分，一键同步到大屏</p>
+      <div class="login-divider"><span>班主任登录</span></div>
+      <div class="login-field"><input type="text" id="loginPhone" placeholder="11 位手机号" /></div>
+      <div class="login-field" id="pwdField"><input type="password" id="loginPassword" placeholder="密码" /></div>
+      <div class="login-field" id="codeField" hidden>
+        <div class="login-code-wrap">
+          <input type="text" id="loginVerifyCode" placeholder="短信验证码" />
+          <button type="button" id="btnSendVerifyCode">获取验证码</button>
+        </div>
+      </div>
+      <div class="login-row">
+        <button class="login-go" id="btnPhoneLogin">登录</button>
+      </div>
+      <button type="button" class="login-switch" id="btnSwitchLogin">无密码？改用验证码登录 →</button>
+      <div class="login-error" id="loginError"></div>
+      <a class="login-back" href="./">← 返回大屏展示</a>
+    </div>
+  </div>
+
+  <script>
+    // OAuth 回调必须回到站点根：若由管理端发起，则把回调参数带回 admin.html
+    (function () {
+      var u = new URL(location.href);
+      if (u.searchParams.get('view') === 'admin') {
+        u.pathname = '/admin.html';
+        u.searchParams.delete('view');
+        location.replace(u.pathname + u.search + u.hash);
+      }
+    })();
+  </script>
+  <script src="vendor/workbuddy-cloud-sdk.js?v=20261123k"></script>
+  <script src="cloud-config.js?v=20261123k"></script>
+  <script src="cloud.js?v=20261123k"></script>
+  <script src="data.js?v=20261123k"></script>
+  <script src="voice.js?v=20261123k"></script>
+  <script src="app.js?v=20261123k"></script>
+</body>
+</html>

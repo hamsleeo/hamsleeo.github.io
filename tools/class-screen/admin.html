@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>班级管理 · 班务大屏</title>
+  <link rel="stylesheet" href="admin.css" />
+</head>
+<body>
+  <!-- 登录 -->
+  <section class="auth" id="authView">
+    <div class="auth-card">
+      <div class="auth-logo"><span>班</span></div>
+      <div class="brand">CLASS BOARD · 班主任工作台</div>
+      <h1>班级管理中心</h1>
+      <p class="sub">点名、点评、积分、喊话，一处搞定，自动同步到大屏</p>
+      <div class="auth-tabs">
+        <button class="auth-tab active" data-auth="login">密码登录</button>
+        <button class="auth-tab" data-auth="code">验证码登录</button>
+        <button class="auth-tab" data-auth="register">首次注册</button>
+      </div>
+
+      <div class="auth-pane active" data-auth-pane="login">
+        <input id="loginPhone" type="tel" maxlength="11" placeholder="11 位手机号" />
+        <input id="loginPassword" type="password" placeholder="密码" />
+        <button class="primary" id="pwdLogin">登录</button>
+        <div class="auth-links">
+          <button class="link-btn" id="toCode">无密码？验证码登录 →</button>
+          <button class="link-btn" id="toRegister">没有账号？注册 →</button>
+        </div>
+      </div>
+
+      <div class="auth-pane" data-auth-pane="code">
+        <input id="codePhone" type="tel" maxlength="11" placeholder="11 位手机号" />
+        <div class="code-row">
+          <input id="codeCode" type="text" placeholder="短信验证码" />
+          <button class="ghost" id="sendCodeCode">获取验证码</button>
+        </div>
+        <button class="primary" id="codeLogin">登录</button>
+        <div class="auth-links"><button class="link-btn" id="codeToLogin">已有密码？密码登录 →</button></div>
+      </div>
+
+      <div class="auth-pane" data-auth-pane="register">
+        <input id="regName" type="text" placeholder="姓名（如 王老师，用于管理端显示）" />
+        <input id="regPhone" type="tel" maxlength="11" placeholder="11 位手机号" />
+        <div class="code-row">
+          <input id="regCode" type="text" placeholder="短信验证码" />
+          <button class="ghost" id="sendRegCode">获取验证码</button>
+        </div>
+        <input id="regPassword" type="password" placeholder="设置密码（至少 6 位）" />
+        <input id="regPassword2" type="password" placeholder="再输入一次密码" />
+        <button class="primary" id="regSubmit">注册并登录</button>
+        <p class="auth-tip">首位注册人将自动成为管理员</p>
+        <div class="auth-links"><button class="link-btn" id="toLogin">已有账号？密码登录 →</button></div>
+      </div>
+
+      <div class="msg" id="authMsg"></div>
+      <a class="back" href="./">← 返回大屏展示</a>
+    </div>
+  </section>
+
+  <!-- 管理主界面 -->
+  <section class="app" id="appView" hidden>
+    <header class="top">
+      <div class="top-inner">
+        <div class="brand-mini"><span class="logo-dot">班</span><span class="brand-txt">班级管理中心</span></div>
+        <div class="top-meta">
+          <span class="sync" id="sync">未连接</span>
+          <span class="who" id="who">　</span>
+        </div>
+        <div class="top-actions">
+          <label class="class-pick"><span>班级</span><select id="classSelect"></select></label>
+          <button class="icon-btn" id="openScreen" title="查看大屏" aria-label="查看大屏">↗</button>
+        </div>
+      </div>
+    </header>
+
+    <div class="notice" id="noAccess" hidden>
+      <div class="notice-icon">◷</div>
+      <h2>等待管理员分配班级</h2>
+      <p>你的账号「<span id="myName">班主任</span>」已注册。请联系管理员在「系统」中把你设为某班班主任，分配后刷新本页即可管理班级。</p>
+    </div>
+    <div class="notice" id="blockedView" hidden>
+      <div class="notice-icon">⊘</div>
+      <h2>账号已被管理员移除</h2>
+      <p>该账号的班主任注册信息已被删除，无法再管理班级大屏。如需恢复请联系管理员，或由新班主任注册后重新分配。</p>
+    </div>
+
+    <main class="layout" id="mainContent">
+      <!-- 侧边导航 -->
+      <aside class="side" id="sideNav">
+        <button class="side-item active" data-page="home"><span class="si">⌂</span>工作台</button>
+        <button class="side-item" data-page="shout"><span class="si">◉</span>教室喊话</button>
+        <button class="side-item" data-page="review"><span class="si">✎</span>行为点评</button>
+        <button class="side-item" data-page="stats"><span class="si">▤</span>积分统计</button>
+        <button class="side-item" data-page="tools"><span class="si">⚙</span>教学工具</button>
+        <button class="side-item" data-page="manage"><span class="si">▦</span>班级管理</button>
+        <button class="side-item admin-only" data-page="access" hidden><span class="si">♙</span>班级与权限</button>
+        <button class="side-item" data-page="me"><span class="si">☺</span>我的</button>
+        <div class="side-foot">免费版 · 无收费功能</div>
+      </aside>
+
+      <div class="content">
+        <!-- ============ 工作台 ============ -->
+        <section class="page active" data-pane="home">
+          <div class="hero">
+            <div class="hero-top">
+              <div>
+                <div class="hero-hello">班主任工作台</div>
+                <h1 class="hero-title" id="heroClass">班级</h1>
+                <div class="hero-slogan" id="heroSlogan">今天也要元气满满</div>
+              </div>
+              <div class="hero-badge">DAILY<br />BOARD</div>
+            </div>
+            <div class="hero-stats">
+              <button class="hero-stat" data-goto="manage" data-mtab="students"><b id="stStudents">0</b><span>在册学生</span></button>
+              <button class="hero-stat" data-goto="manage" data-mtab="groups"><b id="stGroups">0</b><span>学习小组</span></button>
+              <button class="hero-stat" data-goto="stats"><b id="stPoints">0</b><span>班级总积分</span></button>
+              <button class="hero-stat" data-goto="review"><b id="stToday">0</b><span>今日点评</span></button>
+            </div>
+          </div>
+
+          <div class="section">
+            <div class="sec-head"><h2>快捷功能</h2><span>常用操作一键直达</span></div>
+            <div class="quick-grid" id="quickGrid">
+              <button class="quick" data-goto="shout"><i class="qi qi-shout">◉</i><span>教室喊话</span></button>
+              <button class="quick" data-goto="review"><i class="qi qi-review">✎</i><span>行为点评</span></button>
+              <button class="quick" data-goto="tools" data-tool="roll"><i class="qi qi-roll">⊙</i><span>随机点名</span></button>
+              <button class="quick" data-goto="tools" data-tool="timer"><i class="qi qi-timer">◷</i><span>倒计时</span></button>
+              <button class="quick" data-goto="tools" data-tool="attendance"><i class="qi qi-att">✓</i><span>考勤登记</span></button>
+              <button class="quick" data-goto="manage" data-mtab="homework"><i class="qi qi-hw">▤</i><span>作业登记</span></button>
+              <button class="quick" data-goto="manage" data-mtab="duty"><i class="qi qi-duty">⌘</i><span>值日安排</span></button>
+              <button class="quick" data-goto="manage" data-mtab="schedule"><i class="qi qi-sch">▦</i><span>课程表</span></button>
+            </div>
+          </div>
+
+          <div class="section">
+            <div class="sec-head"><h2>行为动态</h2><button class="link-btn" data-goto="review">去点评 →</button></div>
+            <div class="card feed-card">
+              <div id="homeFeed" class="feed"></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ============ 教室喊话 ============ -->
+        <section class="page" data-pane="shout">
+          <div class="page-head"><h1>教室喊话</h1><p>老师手机输入，大屏立刻弹窗并朗读</p></div>
+          <div class="card shout-card">
+            <div class="field-label">喊话内容 <span class="counter"><span id="shoutCount">0</span>/120</span></div>
+            <textarea id="shoutText" rows="3" maxlength="120" placeholder="例如：请各组组长收齐作业，准备上课"></textarea>
+            <div class="quick-tags" id="shoutQuick"></div>
+            <div class="opt-grid">
+              <label class="opt">显示时长
+                <select id="shoutDuration">
+                  <option value="8">8 秒</option><option value="12">12 秒</option>
+                  <option value="20">20 秒</option><option value="30">30 秒</option>
+                  <option value="60">1 分钟</option><option value="120" selected>2 分钟</option>
+                </select>
+              </label>
+              <label class="opt" id="voiceOpt">音色
+                <select id="shoutVoice">
+                  <option value="xiaoxiao" selected>晓晓 · 温柔女声</option>
+                  <option value="yunyang">云扬 · 专业男声（导航播报）</option>
+                  <option value="xiaoyi">晓伊 · 甜美女声</option>
+                  <option value="yunxi">云希 · 阳光男声</option>
+                  <option value="yunjian">云健 · 沉稳男声</option>
+                  <option value="xiaobei">晓北 · 东北话</option>
+                </select>
+              </label>
+              <label class="opt" id="speedOpt">语速
+                <select id="shoutSpeed"><option value="3">舒缓</option><option value="4" selected>标准</option><option value="5">轻快</option></select>
+              </label>
+              <label class="opt check-opt"><input type="checkbox" id="shoutSpeak" checked /> 语音朗读</label>
+            </div>
+            <button class="primary shout-send" id="shoutSend">立即喊话到大屏</button>
+            <p class="tip">使用微软在线真人音色（导航播报同款，大屏为 Edge 浏览器效果最佳，需联网）；只播放所选音色，不再叠加其他声音，网络异常时保持安静。</p>
+          </div>
+          <div class="section">
+            <div class="sec-head"><h2>最近喊话</h2></div>
+            <div class="card"><div id="shoutHistory" class="history"></div></div>
+          </div>
+        </section>
+
+        <!-- ============ 行为点评 ============ -->
+        <section class="page" data-pane="review">
+          <div class="page-head"><h1>行为点评</h1><p>多选学生 + 行为细则，一次给全班批量加减分</p></div>
+          <div class="card review-card">
+            <div class="field-label">第一步 · 选择学生 <span class="sel-tip" id="selTip">已选 0 人</span></div>
+            <div class="sel-actions">
+              <input id="searchStu" placeholder="搜索姓名或学号" />
+              <button class="mini" id="selectAllStu">全选</button>
+              <button class="mini" id="clearStu">清空</button>
+            </div>
+            <div class="stu-grid" id="stuGrid"></div>
+
+            <div class="field-label step">第二步 · 选择行为</div>
+            <div class="score-mode">
+              <button class="mode active" data-mode="plus">＋ 加分</button>
+              <button class="mode" data-mode="minus">－ 扣分</button>
+            </div>
+            <div class="chips" id="dimChips"></div>
+            <div class="chips" id="behaviorChips"></div>
+            <input id="reason" placeholder="补充说明（可选），例如：本周进步明显" />
+            <button class="primary" id="submitScore">确认点评并同步大屏</button>
+          </div>
+          <div class="section">
+            <div class="sec-head"><h2>最近流水</h2><button class="link-btn" id="undoLast">↶ 撤销上一条</button></div>
+            <div class="card"><div id="recentLog" class="log"></div></div>
+          </div>
+        </section>
+
+        <!-- ============ 积分统计 ============ -->
+        <section class="page" data-pane="stats">
+          <div class="page-head"><h1>积分统计</h1><p>个人、小组与六维汇总，数据来自日常点评流水</p></div>
+          <div class="segmented" id="statSeg">
+            <button class="active" data-stat="person">个人总榜</button>
+            <button data-stat="group">小组总榜</button>
+            <button data-stat="dim">维度概览</button>
+          </div>
+          <div class="card dim-card" id="dimPanel" hidden>
+            <div class="dim-radar" id="dimRadar"></div>
+            <div class="dim-info">
+              <h2>六维成长画像</h2>
+              <p>与教室大屏同一份数据：全班各维度平均分</p>
+              <div class="dim-legend" id="dimLegend"></div>
+            </div>
+          </div>
+          <div class="card rank-card"><div id="statList" class="rank-list"></div></div>
+          <div class="section">
+            <div class="sec-head"><h2>近七日积分走势</h2></div>
+            <div class="card"><div id="trendBox" class="trend"></div></div>
+          </div>
+        </section>
+
+        <!-- ============ 教学工具 ============ -->
+        <section class="page" data-pane="tools">
+          <div class="page-head"><h1>教学工具</h1><p>点名、计时、考勤，都是常用的免费小工具</p></div>
+
+          <div class="card tool-card" id="toolRoll">
+            <div class="tool-head"><h2>随机点名</h2><span class="tag">公平随机</span></div>
+            <div class="roll-stage" id="rollStage"><div class="roll-name" id="rollName">点击开始点名</div><div class="roll-sub" id="rollSub">从全班在册学生中随机抽取</div></div>
+            <div class="row-btns">
+              <button class="primary" id="rollStart">开始点名</button>
+              <button class="ghost" id="rollStop">停止</button>
+              <button class="ghost" id="rollShout">把结果喊到大屏</button>
+            </div>
+          </div>
+
+          <div class="card tool-card" id="toolTimer">
+            <div class="tool-head"><h2>课堂倒计时</h2><span class="tag">可喊话提醒</span></div>
+            <div class="timer-stage"><div class="timer-num" id="timerNum">05:00</div><div class="timer-sub">设定时长后开始，结束可自动喊话提醒</div></div>
+            <div class="timer-set">
+              <label>分钟<input id="timerMin" type="number" min="1" max="120" value="5" /></label>
+              <label class="check-opt"><input type="checkbox" id="timerSpeak" checked /> 结束时喊话提醒</label>
+            </div>
+            <div class="row-btns">
+              <button class="primary" id="timerStart">开始</button>
+              <button class="ghost" id="timerPause">暂停</button>
+              <button class="ghost" id="timerReset">重置</button>
+            </div>
+          </div>
+
+          <div class="card tool-card" id="toolAtt">
+            <div class="tool-head"><h2>考勤登记</h2><span class="tag" id="attDate"></span></div>
+            <div class="att-summary" id="attSummary"></div>
+            <div class="field-label">选择学生后标记为出勤状态</div>
+            <div class="sel-actions"><input id="attSearch" placeholder="搜索姓名" /><button class="mini" id="attAll">全选</button><button class="mini" id="attNone">清空</button></div>
+            <div class="stu-grid" id="attGrid"></div>
+            <div class="att-ops">
+              <button class="att-btn present" data-att="present">✓ 出勤</button>
+              <button class="att-btn late" data-att="late">◷ 迟到</button>
+              <button class="att-btn leave" data-att="leave">△ 请假</button>
+              <button class="att-btn absent" data-att="absent">✕ 缺勤</button>
+            </div>
+            <button class="ghost" id="attSave" style="width:100%;margin-top:10px">保存今日考勤</button>
+          </div>
+        </section>
+
+        <!-- ============ 班级管理 ============ -->
+        <section class="page" data-pane="manage">
+          <div class="page-head"><h1>班级管理</h1><p>学生、小组、行为细则与展示内容，都在这里维护</p></div>
+          <div class="subtabs" id="manageTabs">
+            <button class="active" data-mtab="students">学生</button>
+            <button data-mtab="groups">小组</button>
+            <button data-mtab="rules">行为细则</button>
+            <button data-mtab="basic">班级信息</button>
+            <button data-mtab="schedule">课程表</button>
+            <button data-mtab="homework">作业</button>
+            <button data-mtab="duty">值日</button>
+            <button data-mtab="notice">公告</button>
+            <button data-mtab="models">榜样</button>
+          </div>
+
+          <div class="subpane active" data-spane="students">
+            <div class="card">
+              <h2>学生名单 <small id="stuCount">共 0 人</small></h2>
+              <div class="inline-form">
+                <input id="newStuName" placeholder="学生姓名" />
+                <input id="newStuNo" type="number" min="1" placeholder="学号（可留空）" />
+                <button class="primary sm" id="addStu">添加</button>
+              </div>
+              <div class="inline-form">
+                <input id="batchStu" placeholder="批量添加：每行一个姓名，或 姓名|学号" />
+                <button class="ghost" id="batchAddStu">批量导入</button>
+              </div>
+              <div id="stuManageList" class="manage-list"></div>
+            </div>
+          </div>
+
+          <div class="subpane" data-spane="groups">
+            <div class="card">
+              <h2>小组管理 <small>可添加、重命名、分配组员</small></h2>
+              <div class="inline-form"><input id="newGroupName" placeholder="新小组名称，如 启航小组" /><button class="primary sm" id="addGroup">添加小组</button></div>
+              <div id="groupManageList" class="manage-list"></div>
+              <h2>分组设置</h2>
+              <p class="hint">勾选学生后会加入所选小组（每个操作只归属一个小组）。点击小组名可展开成员。</p>
+            </div>
+          </div>
+
+          <div class="subpane" data-spane="rules">
+            <div class="card">
+              <h2>行为分类与细则 <small>加减分标准，可随时增删；支持批量导入</small></h2>
+              <div class="inline-form">
+                <select id="ruleDim"></select>
+                <input id="newRuleLabel" placeholder="细则名称，如 主动回答" />
+                <input id="newRuleValue" type="number" placeholder="分值，可为负" />
+                <button class="primary sm" id="addRule">添加</button>
+              </div>
+              <div class="inline-form">
+                <textarea id="batchRules" rows="3" placeholder="批量导入，每行：分类|细则|分值&#10;例如：课堂表现|积极举手|2&#10;例如：课堂表现|上课讲话|-2"></textarea>
+                <button class="ghost" id="batchAddRules">批量导入</button>
+              </div>
+              <div id="ruleList" class="rule-list"></div>
+            </div>
+          </div>
+
+          <div class="subpane" data-spane="basic">
+            <div class="card">
+              <h2>班级展示信息</h2>
+              <label>班级名称<input data-key="className" /></label>
+              <label>班级寄语<input data-key="slogan" /></label>
+              <label>顶部一句话<input data-key="quote" /></label>
+              <h2>事件倒计时</h2>
+              <label>标题<input data-key="countdownTitle" /></label>
+              <label>日期<input data-key="countdownDate" type="date" /></label>
+              <h2>主题与背景</h2>
+              <div class="chips" id="themeChips"></div>
+              <div class="chips" id="wallChips"></div>
+              <button class="primary save" data-save>保存并同步到大屏</button>
+            </div>
+          </div>
+
+          <div class="subpane" data-spane="schedule">
+            <div class="card">
+              <h2>今日课程表 <small>每行：科目|开始|结束</small></h2>
+              <textarea data-key="schedule" rows="12"></textarea>
+              <button class="primary save" data-save>保存并同步到大屏</button>
+            </div>
+          </div>
+
+          <div class="subpane" data-spane="homework">
+            <div class="card">
+              <h2>今日作业 <small>每行：科目|标题|要求详情</small></h2>
+              <textarea data-key="homework" rows="10"></textarea>
+              <h2>作业完成进度 <small>每行：科目|任务|总人数|已完成|未完成名单</small></h2>
+              <textarea data-key="fun" rows="6"></textarea>
+              <button class="primary save" data-save>保存并同步到大屏</button>
+            </div>
+          </div>
+
+          <div class="subpane" data-spane="duty">
+            <div class="card">
+              <h2>今日值日 <small>每行：任务|负责同学（顿号分隔）</small></h2>
+              <textarea data-key="duty" rows="8"></textarea>
+              <button class="primary save" data-save>保存并同步到大屏</button>
+            </div>
+          </div>
+
+          <div class="subpane" data-spane="notice">
+            <div class="card">
+              <h2>班级公告 <small>每行：标题|内容|强调色（可留空）</small></h2>
+              <textarea data-key="notices" rows="10"></textarea>
+              <button class="primary save" data-save>保存并同步到大屏</button>
+            </div>
+          </div>
+
+          <div class="subpane" data-spane="models">
+            <div class="card">
+              <h2>今日榜样 <small>每行：姓名|称号|积分|emoji</small></h2>
+              <textarea data-key="models" rows="6"></textarea>
+              <button class="primary save" data-save>保存并同步到大屏</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- ============ 班级与权限（仅管理员） ============ -->
+        <section class="page admin-only" data-pane="access" hidden>
+          <div class="page-head"><h1>班级与权限</h1><p>创建班级、分配班主任、删除与恢复注册信息</p></div>
+          <div class="card">
+            <h2>新建班级</h2>
+            <p class="hint">班级代码用于大屏网址，例如 main、class2、yiban（2-32 位字母数字）。创建后把对应大屏网址发给该班班主任。</p>
+            <div class="inline-form">
+              <input id="newClassKey" placeholder="班级代码，如 class2" />
+              <input id="newClassName" placeholder="班级名称，如 三年级二班" />
+              <button class="primary sm" id="createClass">创建班级</button>
+            </div>
+            <div id="classLinks" class="class-links"></div>
+          </div>
+          <div class="card">
+            <h2>班主任与授权 <small>可设置角色、分配班级，或删除班主任并清除其注册信息</small></h2>
+            <div id="userList" class="user-list">加载中…</div>
+            <button class="ghost" id="reloadUsers">刷新列表</button>
+          </div>
+          <div class="card">
+            <h2>已删除的班主任 <small>注册信息已清除，可恢复让其重新注册</small></h2>
+            <div id="blockedList" class="user-list">加载中…</div>
+          </div>
+        </section>
+
+        <!-- ============ 我的 ============ -->
+        <section class="page" data-pane="me">
+          <div class="page-head"><h1>我的</h1><p>账号、密码与大屏入口</p></div>
+          <div class="card profile-card">
+            <div class="avatar" id="avatarLetter">师</div>
+            <div class="profile-info"><div class="profile-name" id="profileName">班主任</div><div class="profile-role" id="profileRole">班主任 · 未分配班级</div></div>
+          </div>
+          <div class="card menu-card">
+            <button class="menu-item" id="changePwd"><span>🔑 修改密码</span><em>›</em></button>
+            <button class="menu-item" id="openScreen2"><span>↗ 查看班级大屏</span><em>›</em></button>
+            <button class="menu-item admin-only" data-goto="access" hidden><span>♙ 班级与权限</span><em>›</em></button>
+            <button class="menu-item danger" id="logout"><span>⊗ 退出登录</span><em>›</em></button>
+          </div>
+          <div class="card about-card">
+            <h2>关于本系统</h2>
+            <p>班级班务大屏 · 免费版。所有功能均可使用，不含任何收费项目、会员解锁或内购入口。前台大屏展示功能保持原样。</p>
+          </div>
+        </section>
+      </div>
+    </main>
+    <div class="toast" id="toast"></div>
+  </section>
+
+  <script src="vendor/workbuddy-cloud-sdk.js?v=20261123k"></script>
+  <script src="cloud-config.js?v=20261123k"></script>
+  <script src="cloud.js?v=20261123k"></script>
+  <script src="data.js?v=20261123k"></script>
+  <script src="admin.js?v=20261123k"></script>
+</body>
+</html>

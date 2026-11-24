@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>班务大屏 · 音色自检</title>
+  <style>
+    body { font-family: "Microsoft YaHei", system-ui, sans-serif; background: #f4f7fb; color: #1f2937; margin: 0; padding: 24px; }
+    .wrap { max-width: 900px; margin: 0 auto; }
+    h1 { font-size: 24px; margin: 0 0 6px; }
+    .tip { background: #fff7ed; border: 1px solid #fed7aa; padding: 12px 16px; border-radius: 10px; line-height: 1.7; }
+    .card { background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 16px 20px; margin-top: 16px; }
+    h2 { font-size: 17px; margin: 0 0 12px; }
+    table { width: 100%; border-collapse: collapse; }
+    td, th { padding: 9px 8px; border-bottom: 1px solid #f0f2f5; text-align: left; font-size: 14px; }
+    th { color: #6b7280; font-weight: 600; }
+    button { border: 0; border-radius: 8px; padding: 7px 14px; background: #2563eb; color: #fff; cursor: pointer; font-size: 14px; }
+    button.gray { background: #e5e7eb; color: #374151; }
+    button:hover { filter: brightness(1.08); }
+    .ok { color: #059669; } .warn { color: #dc2626; }
+    pre { white-space: pre-wrap; word-break: break-all; font-size: 13px; color: #4b5563; }
+    .status { margin-top: 10px; color: #6b7280; min-height: 22px; }
+    .alert { background: #fef2f2; border: 1px solid #fecaca; color: #b91c1c; padding: 12px 16px; border-radius: 10px; margin-top: 14px; line-height: 1.7; }
+    .alert[hidden] { display: none; }
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <h1>班务大屏 · 音色自检</h1>
+  <p class="tip">
+    请在<strong>教室大屏所用的 Edge 浏览器</strong>中打开本页。页面会列出浏览器真正可用的在线自然音色，
+    并逐个显示“选择该音色时实际会播放哪一个”。点【试听】即可确认。<br>
+    如果列表为空或显示“未找到”，说明当前浏览器/网络没有加载微软在线神经音，此时大屏会保持安静，不会播放机械音。
+    请使用教室大屏所用的 Edge 浏览器打开本页复测。
+  </p>
+
+  <div class="alert" id="edgeWarning" hidden>
+    <strong>当前浏览器不是 Microsoft Edge。</strong> 微软在线神经音只在 Edge 中提供，这里检测到“未找到”属正常现象，
+    不代表教室大屏也如此。安装包启动的是 Edge（独立配置），请用大屏上的 Edge 打开本页复测。
+  </div>
+
+  <div class="card">
+    <h2>预设音色匹配结果 <button class="gray" id="refresh">重新检测</button></h2>
+    <table>
+      <thead><tr><th>管理端选项</th><th>实际匹配的音色</th><th style="width:110px">操作</th></tr></thead>
+      <tbody id="rows"></tbody>
+    </table>
+    <div class="status" id="status"></div>
+  </div>
+
+  <div class="card">
+    <h2>音源方案说明</h2>
+    <p style="color:#6b7280;font-size:13px;margin:0;line-height:1.8">
+      喊话只使用一种在线人声：<strong>微软 Edge 神经音</strong>（晓晓、云扬、晓伊、云希、云健、晓北）。
+      它走 Edge 浏览器自带服务，教室端安装包已强制使用 Edge，联网即可用。<br>
+      原先的百度、有道备用接口和本地机械音已彻底移除：百度在部分网络连不上、有道接口已下线（返回 500）、机械音刺耳。<br>
+      现在只有所选的那一种神经音在播；万一检测不到神经音（非 Edge 或未联网），大屏会保持安静，绝不叠加第二种声音。
+    </p>
+  </div>
+
+  <div class="card">
+    <h2>浏览器检测到的在线自然音色</h2>
+    <pre id="voices">检测中…</pre>
+  </div>
+
+  <div class="card">
+    <h2>模拟喊话测试（用真实长句复现大屏场景）</h2>
+    <p style="color:#6b7280;font-size:13px;margin:0 0 8px">
+      用与后台喊话相同长度的句子播放，验证长句是否也能正常出声。下方会显示完整播放日志。
+    </p>
+    <button id="testLong">播放长句喊话</button>
+    <button id="btnUnlock" style="background:#059669">激活语音（点一次）</button>
+    <div class="status" id="longStatus"></div>
+    <p style="color:#b45309;font-size:13px;margin:8px 0 0;line-height:1.7">
+      新版会优先<strong>自动解锁</strong>（依赖安装包给 Edge 的自动播放参数），成功时无需任何人工点击即可远程喊话。
+      若上方“语音激活”仍显示“未激活”，说明该电脑的自动播放被系统拦截，此时在大屏上真实点击一次任意位置即可激活，
+      激活后本次开机期间都能自动播报。本页点【激活语音】也可完成激活。
+    </p>
+  </div>
+
+  <div class="card">
+    <h2>播放日志 <button class="gray" id="refreshLog">刷新日志</button></h2>
+    <p style="color:#6b7280;font-size:13px;margin:0 0 8px">
+      这里显示本页最近一次播放的完整过程。<strong>大屏喊话的日志</strong>也会写到同一浏览器的存储里——
+      在大屏喊话后，回到本页点“刷新日志”即可看到大屏端到底有没有调用播放、有没有出声。
+    </p>
+    <pre id="logView" style="max-height:260px;overflow:auto">（暂无日志）</pre>
+  </div>
+
+  <div class="card">
+    <h2>环境</h2>
+    <pre id="env"></pre>
+  </div>
+</div>
+
+<script src="voice.js?v=20261123k"></script>
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var statusEl = $('status');
+
+  function render() {
+    var d = window.ClassScreenVoice.diagnose();
+    $('edgeWarning').hidden = /Edg\//.test(d.browser);
+    var tbody = $('rows');
+    tbody.innerHTML = '';
+    Object.keys(d.picks).forEach(function (key) {
+      var tr = document.createElement('tr');
+      var name = window.ClassScreenVoice.presets[key].label;
+      var picked = d.picks[key];
+      var ok = picked.indexOf('未找到') < 0;
+      tr.innerHTML = '<td>' + name + '</td>' +
+        '<td class="' + (ok ? 'ok' : 'warn') + '">' + picked + '</td>' +
+        '<td><button data-key="' + key + '">试听</button></td>';
+      tbody.appendChild(tr);
+    });
+    $('voices').textContent = d.naturalVoices.length
+      ? d.naturalVoices.join('\n')
+      : '（没有检测到在线自然音色。请在 Edge 中打开，并确认已联网。）';
+    $('env').textContent = '语音模块版本：' + (window.ClassScreenVoice.version || '旧版') +
+      '\n语音接口：' + (d.speechSupported ? '可用' : '不可用') +
+      '\n音色总数：' + d.totalVoices +
+      '\n语音激活：' + (window.ClassScreenVoice.isUnlocked ? (window.ClassScreenVoice.isUnlocked() ? '已激活 ✅' : '未激活 ⚠️（点下方"激活语音"）') : '未知') +
+      '\n浏览器：' + d.browser;
+
+    tbody.querySelectorAll('button').forEach(function (btn) {
+      btn.onclick = function () {
+        var key = btn.getAttribute('data-key');
+        window.ClassScreenVoice.stop();
+        statusEl.textContent = '正在试听：' + window.ClassScreenVoice.presets[key].label + ' …';
+        window.ClassScreenVoice.speakShout('同学们好，现在开始上课。', { voice: key, voiceSpeed: 4 }, function (sec) {
+          var used = window.ClassScreenVoice.getLastSource ? window.ClassScreenVoice.getLastSource() : 'unknown';
+          var label = used === 'neural' ? '✅ 微软 Edge 神经音（所选真人音色，仅此一种声音）'
+            : used === 'none' ? '🔇 静默（未检测到神经音，未播放任何声音；请用 Edge 打开并联网）'
+            : '未知';
+          statusEl.innerHTML = '试听结束（约 ' + (sec ? sec.toFixed(1) : '?') + ' 秒）。本次实际音源：<strong>' + label + '</strong>' +
+            (used === 'neural' ? '' : '<br><span style="color:#b45309">提示：微软神经音仅在 Edge 中提供。请用教室大屏的 Edge 打开本页试听，才是大屏真实效果。</span>');
+        });
+      };
+    });
+  }
+
+  $('refresh').onclick = function () {
+    window.ClassScreenVoice.refreshVoices();
+    statusEl.textContent = '';
+    render();
+  };
+
+  // 播放日志：读取 voice.js 写入的共享日志（大屏与本页同源，可跨页查看）
+  function refreshLog() {
+    var arr = window.ClassScreenVoice.getLog ? window.ClassScreenVoice.getLog() : [];
+    $('logView').textContent = arr.length ? arr.join('\n') : '（暂无日志。先点上方试听或到后台发一次喊话，再刷新。）';
+  }
+  $('refreshLog').onclick = refreshLog;
+
+  $('btnUnlock').onclick = function () {
+    if (window.ClassScreenVoice.unlock) window.ClassScreenVoice.unlock();
+    $('longStatus').textContent = '已激活语音，可点【播放长句喊话】验证。';
+    render();
+  };
+
+  // 长句模拟：用与后台喊话相当的长度，复现“短句有声、长句无声”的问题
+  var LONG = '同学们好，现在开始上课。请各组组长先收齐昨天的作业，然后大家打开课本翻到第二十页，' +
+    '认真听讲并做好课堂笔记，下课前我们会一起复习今天学的重点内容。';
+  $('testLong').onclick = function () {
+    var s = $('longStatus');
+    s.textContent = '正在播放长句（' + LONG.length + ' 字）…';
+    window.ClassScreenVoice.stop();
+    window.ClassScreenVoice.speakShout(LONG, { voice: 'xiaoxiao', voiceSpeed: 4 }, function (sec) {
+      var used = window.ClassScreenVoice.getLastSource ? window.ClassScreenVoice.getLastSource() : 'unknown';
+      s.innerHTML = '长句播放结束（约 ' + (sec ? sec.toFixed(1) : '?') + ' 秒）。实际音源：<strong>' +
+        (used === 'neural' ? '✅ 神经音正常出声' : used === 'none' ? '🔇 静默（未出声）' : used) + '</strong>';
+      refreshLog();
+    });
+  };
+
+  window.ClassScreenVoice.refreshVoices();
+  render();
+  refreshLog();
+  // 在线音色是异步加载的，稍后自动刷新一次
+  setTimeout(function () { window.ClassScreenVoice.refreshVoices(); render(); }, 3000);
+})();
+</script>
+</body>
+</html>
