@@ -358,6 +358,9 @@
               <label>班级名称<input data-key="className" /></label>
               <label>班级寄语<input data-key="slogan" /></label>
               <label>顶部一句话<input data-key="quote" /></label>
+              <h2>单双周基准</h2>
+              <label>本学期开学日<input data-key="termStart" type="date" /></label>
+              <p class="hint" style="margin:-2px 0 10px">填这学期开学那天的日期即可（周几都行，会自动按所在周对齐），开学所在周算「第1周 · 单周」，之后每周自动交替。写成 <code>单周科目/双周科目</code> 的课（如第八节 <code>道德与法治/心理健康</code>、晚自习 <code>晚自习一 数学/晚自习一 物理</code>）都会按此切换。每学期开学初改一次这个日期即可。留空则按自然年周数推算。</p>
               <h2>事件倒计时</h2>
               <label>标题<input data-key="countdownTitle" /></label>
               <label>日期<input data-key="countdownDate" type="date" /></label>
@@ -371,7 +374,7 @@
           <div class="subpane" data-spane="schedule">
             <div class="card">
               <h2>一周课程表 <small>按周编辑，大屏每天自动显示当天的课；每行：科目|开始|结束</small></h2>
-              <p class="hint">选择星期分别编辑每天的课务，保存后大屏按当天星期自动切换、每周循环。<b>单双周课程</b>：像第八节这样隔周不同的课，科目写成 <code>单周科目/双周科目</code>（如 <code>体育/班会</code>），大屏会按周次奇偶自动选课，标题会显示「单周/双周」。</p>
+              <p class="hint">选择星期分别编辑每天的课务，保存后大屏按当天星期自动切换、每周循环。<b>单双周课程</b>：像第八节这样隔周不同的课，科目写成 <code>单周科目/双周科目</code>（如 <code>道德与法治/心理健康</code>），大屏会按「基础信息 → 单双周基准」里设置的「本学期开学日」自动选课，标题显示「单周/双周」。每学期开学初记得更新那个日期。<br><b>晚自习</b>：晚自习就当普通一节课写在课表最后两行，同样支持单双周——科目写成 <code>单周科目/双周科目</code>。<b>注意</b>：单双周两边都要写全类名（如 <code>晚自习一 数学/晚自习一 物理|19:00|19:40</code>、<code>晚自习二 英语/晚自习二 化学|19:50|20:30</code>），若只写 <code>晚自习一 数学/物理</code>，双周会只显示「物理」而丢掉前缀。若两节固定不轮换，直接写 <code>数学|19:00|19:40</code> 即可。大屏只显示科目、按开学基准自动切换并打「单周/双周」角标，到点自动进入「进行中」。</p>
               <div class="day-tabs" id="dayTabs">
                 <button type="button" class="day-tab active" data-day="1">周一</button>
                 <button type="button" class="day-tab" data-day="2">周二</button>
@@ -382,7 +385,7 @@
                 <button type="button" class="day-tab" data-day="7">周日</button>
               </div>
               <div class="day-panes">
-                <div class="day-pane active" data-daypane="1"><textarea data-key="schedule1" rows="12" placeholder="每行一节课：科目|开始|结束&#10;如：语文|08:00|08:40&#10;单双周：体育/班会|16:40|17:20&#10;留空表示当天无课"></textarea></div>
+                <div class="day-pane active" data-daypane="1"><textarea data-key="schedule1" rows="12" placeholder="每行一节课：科目|开始|结束&#10;如：语文|08:00|08:40&#10;单双周：体育/班会|16:40|17:20&#10;晚自习：晚自习一 数学/晚自习一 物理|19:00|19:40&#10;留空表示当天无课"></textarea></div>
                 <div class="day-pane" data-daypane="2"><textarea data-key="schedule2" rows="12" placeholder="每行一节课：科目|开始|结束"></textarea></div>
                 <div class="day-pane" data-daypane="3"><textarea data-key="schedule3" rows="12" placeholder="每行一节课：科目|开始|结束"></textarea></div>
                 <div class="day-pane" data-daypane="4"><textarea data-key="schedule4" rows="12" placeholder="每行一节课：科目|开始|结束"></textarea></div>

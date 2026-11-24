@@ -180,6 +180,7 @@
     var homework = lines('homework').map(function (l) { var p = l.split('|'); return { subject: p[0] || '其他', title: p[1] || '作业', detail: p[2] || '' }; });
     var by = {}; homework.forEach(function (h) { (by[h.subject] = by[h.subject] || []).push({ title: h.title, detail: h.detail }); });
     state.className = ($('[data-key="className"]').value || '').trim() || '班级';
+    state.termStart = ($('[data-key="termStart"]').value || '').trim();
     state.slogan = $('[data-key="slogan"]').value || '';
     state.quote = $('[data-key="quote"]').value || '';
     state.countdown = { title: $('[data-key="countdownTitle"]').value || '班级活动', date: $('[data-key="countdownDate"]').value || state.countdown.date };
@@ -195,6 +196,7 @@
   function set(k, v) { var el = $('[data-key="' + k + '"]'); if (el) el.value = v == null ? '' : v; }
   function fillForm() {
     set('className', state.className); set('slogan', state.slogan); set('quote', state.quote);
+    set('termStart', state.termStart || '');
     set('countdownTitle', state.countdown.title); set('countdownDate', state.countdown.date);
     // 一周课表回填：新结构用 weeklySchedule；旧数据把 schedule 填到周一~周五作初始参考
     var ws = state.weeklySchedule;
@@ -236,6 +238,7 @@
         state.weeklySchedule = ws;
       }
       if (!state.leaves) state.leaves = [];
+      if (state.termStart == null) state.termStart = '';
       if (state.moduleOrder && state.moduleOrder.indexOf('leave') < 0) {
         var li = state.moduleOrder.indexOf('attention');
         state.moduleOrder.splice(li >= 0 ? li : state.moduleOrder.length, 0, 'leave');

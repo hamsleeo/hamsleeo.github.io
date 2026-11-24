@@ -46,6 +46,7 @@
       st.weeklySchedule = ws;
     }
     if (!st.leaves) st.leaves = [];
+    if (st.termStart == null) st.termStart = '';
     if (st.moduleOrder && st.moduleOrder.indexOf('leave') < 0) {
       var i = st.moduleOrder.indexOf('attention');
       st.moduleOrder.splice(i >= 0 ? i : st.moduleOrder.length, 0, 'leave');
@@ -163,8 +164,25 @@
     if (ws && ws[todayKey()] && ws[todayKey()].length) return ws[todayKey()];
     return state.schedule || [];
   }
-  // 单双周：科目写成“单周/双周”（如 体育/班会），按周次奇偶取对应一门
-  function isOddWeek() { return weekNumber() % 2 === 1; }
+  // 单双周：科目写成“单周/双周”（如 体育/班会），按周次奇偶取对应一门。
+  // 周次基准：优先用 state.termStart（开学第一周那周的周一），该周算第1周(单周)，
+  // 每 7 天推进一周；未设置时回退到自然年周数（兼容老数据）。
+  function parseDate(s) {
+    var m = /^(\d{4})-(\d{1,2})-(\d{1,2})$/.exec(String(s || '').trim());
+    return m ? new Date(+m[1], +m[2] - 1, +m[3]) : null;
+  }
+  function mondayOf(d) { var x = new Date(d); var w = x.getDay() || 7; x.setDate(x.getDate() - (w - 1)); x.setHours(0, 0, 0, 0); return x; }
+  function termWeekNumber() {
+    var base = parseDate(state.termStart);
+    if (!base) return 0;
+    var thisMon = mondayOf(new Date());
+    return Math.round((thisMon - mondayOf(base)) / (7 * 86400000)) + 1;
+  }
+  function isOddWeek() {
+    var tw = termWeekNumber();
+    if (tw > 0) return (tw % 2 === 1);
+    return weekNumber() % 2 === 1;
+  }
   function actualSubject(c) {
     var s = String(c.subject || '');
     if (s.indexOf('/') < 0) return s;
@@ -179,7 +197,8 @@
     var idxNow = -1;
     courses.forEach(function (c, i) { if (cur >= toMin(c.start) && cur < toMin(c.end)) idxNow = i; });
     var dayName = ['周日','周一','周二','周三','周四','周五','周六'][new Date().getDay()];
-    $('#scheduleWeek').textContent = dayName + ' · 第 ' + weekNumber() + ' 周 · ' + weekTag();
+    var tw = termWeekNumber();
+    $('#scheduleWeek').textContent = dayName + ' · 第 ' + (tw > 0 ? tw : weekNumber()) + ' 周 · ' + weekTag();
     $('#scheduleStrip').innerHTML = courses.length ? courses.map(function (c, i) {
       var cls = i === idxNow ? ' is-now' : (toMin(c.end) <= cur ? ' is-done' : '');
       var altBadge = hasAlt(c) ? '<span class="sc-alt">' + weekTag() + '</span>' : '';

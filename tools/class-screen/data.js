@@ -109,6 +109,9 @@
       margins: { left: 20, right: 0, top: 0, bottom: 0 },
       zoom: 100,
       noticeAccent: '暖橘',
+      /* 单双周基准：填“开学第一周那周的周一”日期(YYYY-MM-DD)，该周算单周；
+         大屏据此按周推算单双周，未填时回退到自然年周数奇偶 */
+      termStart: '',
       moduleOrder: ['schedule','current','homework','duty','countdown','overview','fun','groups','models','radar','notice','leave','attention'],
       hiddenModules: [],
       /* 手机喊话：老师从管理端发送，展示端检测 id 变化后弹层并朗读 */
