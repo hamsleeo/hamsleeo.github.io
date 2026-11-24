@@ -27,10 +27,10 @@ create policy downloads_admin_write on public.downloads for all using (public.is
 
 insert into public.downloads (id, name, version, size, platform, category, icon, url, mirror, description, note, sort_order, enabled)
 values
-  ('class-screen-installer', '安装班务大屏', 'Windows 安装包', '196 KB', 'Windows 10/11 64 位', '教学工具', '🖥️',
-   'files/class-screen-installer.exe', '',
-   '把班务大屏装到教室电脑或办公电脑：桌面「教师端管理」和「班务大屏壁纸」两个快捷方式都指向本站域名，积分加减、行为点评、喊话、值日考勤随时用。悬浮按钮可拖到任意位置，单击开合、双击看桌面、长按调出大屏。',
-   '安装包约 196 KB。安装时填班级代码（默认 main）。桌面快捷方式打开的是本站 www.smartlearner.top。悬浮按钮操作：单击=下拉/收起控制台，双击=大屏变壁纸（露出桌面图标），长按0.6秒=调出大屏到桌面最前，拖动=移位。Windows 提示未知发布者时勾选“仍要运行”。',
+  ('class-screen-installer', '安装班务大屏', 'Windows 安装包（ZIP）', '8.08 MB', 'Windows 10/11 64 位', '教学工具', '🖥️',
+   'files/class-screen-installer.zip', '',
+   '把班务大屏装到教室电脑或办公电脑：桌面「班务大屏（班级）」和「教师端管理」两个快捷方式都指向本站域名，积分加减、行为点评、喊话、值日考勤随时用。悬浮按钮可拖到任意位置，单击开合、双击看桌面、长按调出大屏。',
+   '下载的是 ZIP 压缩包，右键「全部解压缩」后双击里面的【安装班务大屏.exe】。用 ZIP 是为了避免浏览器拦截未签名的 exe。安装时填班级代码或直接填中文班级名（默认 main）。桌面快捷方式打开的是本站 www.smartlearner.top。Windows 若提示“已保护你的电脑”，点【更多信息】→【仍要运行】。',
    10, true),
   ('class-screen-manual', '班务大屏 · 班主任使用手册', 'HTML 版', '33 KB', '浏览器直接打开', '教学工具', '📖',
    'files/class-screen-manual.html', '',
