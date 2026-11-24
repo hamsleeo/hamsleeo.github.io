@@ -29,7 +29,7 @@ insert into public.downloads (id, name, version, size, platform, category, icon,
 values
   ('class-screen-installer', '安装班务大屏', 'Windows 安装包', '196 KB', 'Windows 10/11 64 位', '教学工具', '🖥️',
    'files/class-screen-installer.exe', '',
-   '把班务大屏装到教室电脑或办公电脑：桌面「教师端管理」和「班务大屏壁纸」两个快捷方式都指向本站域名，积分加减、行为点评、喊话、值日考勤随时用。',
+   '把班务大屏装到教室电脑或办公电脑：桌面「教师端管理」和「班务大屏壁纸」两个快捷方式都指向本站域名，积分加减、行为点评、喊话、值日考勤随时用。悬浮控制台可拖到屏幕任意位置，也能收起成小条、点击再展开。',
    '安装包约 196 KB。安装时填班级代码（默认 main）。桌面快捷方式打开的是本站 www.smartlearner.top；若教师端登录后提示「来源未授权」，是云端白名单还没放行本站域名，此时数据只存本机，需管理员在云端补白名单。Windows 提示未知发布者时勾选“仍要运行”。',
    10, true),
   ('class-screen-manual', '班务大屏 · 班主任使用手册', 'HTML 版', '33 KB', '浏览器直接打开', '教学工具', '📖',
