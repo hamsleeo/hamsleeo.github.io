@@ -21,12 +21,34 @@
     return DEFAULT_BOARD_KEY;
   })();
 
+  // 应用网关会无条件覆盖浏览器发出的 authorization 头（替换成沙箱 JWT），
+  // 导致 SDK 的 access_token 到不了云端 API。这里用自定义 fetch 把 SDK 设置的
+  // Authorization 改名为 X-SDK-Auth（网关不碰自定义头），由代理端还原。
+  function makeProxyFetch() {
+    var nativeFetch = global.fetch.bind(global);
+    return function (input, init) {
+      var url = (typeof input === 'string') ? input : (input && input.url) || '';
+      var isProxy = cfg && cfg.endpoint && url.indexOf(cfg.endpoint.split('?')[0]) === 0;
+      if (!isProxy || !init || !init.headers) return nativeFetch(input, init);
+      var headers = new Headers(init.headers);
+      var auth = headers.get('Authorization') || headers.get('authorization');
+      if (auth) {
+        headers.set('X-SDK-Auth', auth);
+        headers.delete('Authorization');
+        headers.delete('authorization');
+        init = Object.assign({}, init, { headers: headers });
+      }
+      return nativeFetch(input, init);
+    };
+  }
+
   function init() {
     if (!cfg || !global.WorkBuddyCloud) return null;
     cloud = global.WorkBuddyCloud.createWorkBuddyCloud({
       endpoint: cfg.endpoint,
       oauthRelayBaseUrl: cfg.oauthRelayBaseUrl,
-      publishableKey: cfg.publishableKey
+      publishableKey: cfg.publishableKey,
+      fetch: makeProxyFetch()
     });
     return cloud;
   }
