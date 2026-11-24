@@ -73,6 +73,7 @@
               <div class="clock-time" id="clockTime">08:42:04</div>
               <div class="clock-date" id="clockDate">2026年11月23日 星期一</div>
             </div>
+            <a class="top-btn" href="admin.html" title="教师端管理界面：班主任登录后可编辑课程、作业与积分"><span>⚙</span> 教师端</a>
             <button class="top-btn" id="btnScore" title="快捷点评"><span>✦</span> 快捷点评</button>
             <button class="top-btn" id="btnEdit" title="布局编辑"><span>✎</span> 编辑</button>
             <button class="top-btn icon-only" id="btnFull" title="全屏显示">⛶</button>
@@ -275,13 +276,15 @@
   </div>
 
   <script>
-    // OAuth 回调必须回到站点根：若由管理端发起，则把回调参数带回 admin.html
+    // OAuth 回调带 view=admin 时回到本目录的 admin.html（不是站点根后台）
     (function () {
       var u = new URL(location.href);
       if (u.searchParams.get('view') === 'admin') {
-        u.pathname = '/admin.html';
         u.searchParams.delete('view');
-        location.replace(u.pathname + u.search + u.hash);
+        var dest = new URL('admin.html', location.href);
+        dest.search = u.search;
+        dest.hash = u.hash;
+        location.replace(dest.href);
       }
     })();
   </script>

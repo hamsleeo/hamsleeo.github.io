@@ -32,6 +32,7 @@
       tags: Array.isArray(r.tags) ? r.tags : [], badge: r.badge || '',
       colors: Array.isArray(r.colors) ? r.colors : ['#1b5e46', '#3f9d78', '#43e08a'],
       url: r.url, mode: r.mode || 'embed', note: r.note || '',
+      adminUrl: r.admin_url || r.adminUrl || (r.id === 'class-screen' ? 'tools/class-screen/admin.html' : ''),
       bundled: false
     };
   }
@@ -52,6 +53,7 @@
         tags: Array.isArray(t.tags) ? t.tags : [], badge: t.badge || '',
         colors: Array.isArray(t.colors) ? t.colors : ['#1b5e46', '#3f9d78', '#43e08a'],
         url: t.url, mode: t.mode || 'window', note: t.note || '',
+        adminUrl: t.adminUrl || '',
         bundled: true
       });
     });
@@ -158,6 +160,7 @@
           '<div class="tags">' + tags + '</div>' +
           noteHtml +
           '<div class="card-foot">' +
+            (t.adminUrl ? '<button class="btn btn-sm" data-act="admin" title="班主任登录，管理课程、作业与积分">教师端 ↗</button>' : '') +
             '<button class="btn btn-primary btn-sm" data-act="open">' + winLabel + '</button>' +
             '<button class="icon-btn" data-act="window" title="在新窗口打开">↗</button>' +
           '</div>' +
@@ -235,6 +238,12 @@
       var act = btn.getAttribute('data-act');
       if (act === 'open') openTool(t, false);
       else if (act === 'window') openTool(t, true);
+      else if (act === 'admin') {
+        var au = safeUrl(t.adminUrl);
+        if (!au) { toast('管理端链接无效'); return; }
+        markOpen(t);
+        window.open(au, '_blank', 'noopener');
+      }
       return;
     }
     openTool(t, false);

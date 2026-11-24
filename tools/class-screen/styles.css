@@ -113,6 +113,8 @@ button { cursor: pointer; }
 .top-btn {
   border: 1px solid rgba(255,255,255,.18); color: var(--ink); background: rgba(15,28,48,.66);
   border-radius: 10px; padding: 9px 12px; font-size: 13px; white-space: nowrap;
+  display: inline-flex; align-items: center; gap: 3px; text-decoration: none;
+  font-family: inherit; cursor: pointer;
   transition: background .2s, border-color .2s, transform .2s;
 }
 .top-btn:hover { background: rgba(255,255,255,.16); border-color: rgba(255,255,255,.35); transform: translateY(-1px); }
