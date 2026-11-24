@@ -11,24 +11,23 @@
  * ------------------------------------------------------------------
  */
 (function () {
-  // ↓↓↓ 部署好 Worker 后，把地址粘贴到引号里 ↓↓↓
-  var WORKER = 'https://class-screen-proxy.38810621.workers.dev';
+  // ↓↓↓ 国内代理地址（WorkBuddy 应用，带 sharecode 才能过网关）↓↓↓
+  var PROXY = 'https://class-screen-proxy.app.workbuddy.host/?sharecode=KHYR6C3XTY&p=';
   // ↑↑↑ 只需改这一行 ↑↑↑
 
   var CLOUD = 'https://class-screen-72644.app.workbuddy.host';
   var OAUTH = 'https://www.workbuddy.cn/v2/as/genie-baas/oauth';
 
-  // Worker 地址可能是完整 https URL，也可能是相对路径
-  var base = '';
-  if (WORKER) {
-    base = WORKER.replace(/\/+$/, '');
-    if (!/^https?:\/\//i.test(base) && base.charAt(0) !== '/') base = '/' + base;
-  }
+  // SDK 用 baseUrl + 路径 拼接，所以把真实路径塞进 p 参数，
+  // 网关只看根路径是否带 sharecode，代理端再从 p 还原路径。
+  var apiBase = PROXY + '/api';
+  var oauthBase = PROXY + '/oauth';
+  var useProxy = !!PROXY;
 
   window.CLOUD_CONFIG = {
-    endpoint: base ? base + '/api' : CLOUD,
-    oauthRelayBaseUrl: base ? base + '/oauth' : OAUTH,
+    endpoint: useProxy ? apiBase : CLOUD,
+    oauthRelayBaseUrl: useProxy ? oauthBase : OAUTH,
     publishableKey: 'wbpk_8srtdD1SnpD4G1BcCgMWfo_VI2ERCx4LO4F0iJ8oIMW29CnghsQGz36',
-    viaWorker: !!base
+    viaWorker: useProxy
   };
 })();

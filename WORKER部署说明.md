@@ -1,4 +1,4 @@
-# 班务大屏 · Cloudflare Worker 代理部署说明
+# 班务大屏 · 国内代理部署说明
 
 ## 为什么需要它
 
@@ -6,50 +6,24 @@
 `class-screen-72644.app.workbuddy.host`。浏览器跨域请求必须先发 OPTIONS 预检，
 而云端对预检返回 501，导致登录和数据同步报 `Failed to fetch`。
 
-Cloudflare Worker 作为中间代理：吃掉预检、转发请求、把来源伪装成云端自己，
-浏览器看到的仍是你的域名，云端看到的仍是同源请求。
+需要一个中间代理：吃掉预检、转发请求、把来源伪装成云端自己。
 
-## 部署步骤（约 5 分钟，免费）
+## 方案演进（重要）
 
-### 1. 注册 / 登录 Cloudflare
+1. **Cloudflare Worker 方案已废弃**：`workers.dev` 域名在国内被墙，
+   浏览器直接超时（`ERR_CONNECTION_TIMED_OUT`），教室电脑连不上。
+   绑自定义域名又要求把 NS 迁到 Cloudflare，会牵动整个站点，风险太大。
+2. **现方案：WorkBuddy 云代理**：把同样的代理逻辑写成 Node 服务，
+   部署在 WorkBuddy 国内节点（`class-screen-proxy.app.workbuddy.host`），
+   国内可正常访问。代码在 `G:\workbuddy\2026-11-18-16-19-04\class-screen-proxy\`。
 
-打开 https://dash.cloudflare.com 注册账号（免费版即可，不需要绑定你的域名）。
+## 当前配置
 
-### 2. 创建 Worker
-
-左侧菜单 **Workers & Pages** → **Create** → **Create Worker** →
-起个名字（如 `class-screen-proxy`）→ **Deploy**。
-
-### 3. 粘贴代码
-
-创建后点 **Edit code**，把编辑器里默认内容全部删掉，
-把本仓库的 `cloudflare-worker.js` **全文复制粘贴**进去 → **Deploy**。
-
-### 4. 复制 Worker 地址
-
-部署成功后，页面顶部会显示地址，形如：
-
-```
-https://class-screen-proxy.你的账号.workers.dev
-```
-
-点右上角复制按钮。**末尾不要带斜杠**。
-
-### 5. 把地址填进配置
-
-打开仓库里的 `tools/class-screen/cloud-config.js`，找到这一行：
-
-```js
-  var WORKER = '';
-```
-
-改成（把地址换成你复制的）：
-
-```js
-  var WORKER = 'https://class-screen-proxy.你的账号.workers.dev';
-```
-
-保存后推送，约 1 分钟后生效。
+- 代理地址：`https://class-screen-proxy.app.workbuddy.host/?sharecode=KHYR6C3XTY`
+- 配置位置：`tools/class-screen/cloud-config.js` 的 `PROXY` 一行
+- SDK 用 `baseUrl + 路径` 拼接，所以配置里把真实路径塞进 `p` 参数：
+  `PROXY + '/api'` → 请求变成 `?sharecode=XXX&p=/api/v1/xxx`
+  → WorkBuddy 网关看根路径带 sharecode 放行 → 代理端从 `p` 还原路径并转发上游。
 
 ## 验证是否成功
 
@@ -58,12 +32,18 @@ https://class-screen-proxy.你的账号.workers.dev
 2. 输入手机号 → 点「获取验证码」
 3. **不再报 `Failed to fetch`**，能收到短信验证码 → 成功
 
-如果报别的错（如验证码发送失败、401），把错误提示截图发我，
-那是接口层面的问题，代理已经通了。
+如果报 `Failed to fetch` 以外的错（如验证码发送失败、401），那是接口层问题，代理已通。
 
-## 注意事项
+## 维护
 
-- Worker 免费版每天 10 万次请求，班级大屏完全够用。
-- 改 Worker 代码后立即生效，不用改域名 DNS、不用动 GitHub Pages。
-- 你的域名 DNS（DNSPod）和 GitHub Pages 配置**都不用动**。
-- 如果以后想换回直连，把 `WORKER` 改回空字符串即可。
+- 代理应用管理：WorkBuddy 客户端 → 头像 → 设置 → 数据管理 → 应用
+- 重新部署：在 `class-screen-proxy` 目录执行发布，sharecode 保持不变即可
+- 想换回直连：把 `cloud-config.js` 的 `PROXY` 改成空字符串
+- 代理日志排错：本地 `cd class-screen-proxy && node server.js` 后 curl 测试
+
+## 技术细节
+
+代理用 Node 原生 `https.request` 转发（不用 fetch），
+避免本机/沙箱的 `HTTP_PROXY` 环境变量把请求劫持到别处。
+转发时把 `Origin`/`Referer` 换成上游域名，云端当成同源请求；
+自动访问分享码页拿 `__wb_rsc` 会话 Cookie 并注入，处理跨域预检（ OPTIONS → 204 ）。
