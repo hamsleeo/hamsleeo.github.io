@@ -1,4 +1,4 @@
-# 教师工具箱 · 一键推送（无需反引号续行，不会卡在 >>）
+﻿# 教师工具箱 · 一键推送（无需反引号续行，不会卡在 >>）
 # 用法：在 PowerShell 里运行  powershell -ExecutionPolicy Bypass -File "推送到GitHub.ps1"
 # 提示时粘贴新的 GitHub 令牌，回车即可。令牌只在本机内存中用，不写入任何文件。
 
