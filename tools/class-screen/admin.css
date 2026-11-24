@@ -37,6 +37,7 @@ textarea { resize:vertical; line-height:1.6; }
 .ghost:hover { border-color:var(--accent); }
 .ghost.danger { color:var(--warn); }
 .mini { border:1px solid var(--line); background:#fff; color:var(--sub); border-radius:8px; padding:8px 12px; font-size:12px; white-space:nowrap; }
+.mini.sub { color:#8a94a3; background:#fafbfc; }
 .link-btn { border:0; background:none; color:var(--accent); font-size:13px; padding:4px; }
 .auth-links { text-align:center; margin:6px 0 2px; }
 .auth-tip { text-align:center; color:var(--sub); font-size:12px; margin:8px 0 0; }
@@ -57,6 +58,7 @@ textarea { resize:vertical; line-height:1.6; }
 .top-actions { margin-left:auto; display:flex; align-items:center; gap:10px; }
 .class-pick { display:flex; align-items:center; gap:7px; font-size:12px; color:var(--sub); }
 .class-pick select { width:auto; min-width:130px; max-width:190px; margin:0; padding:8px 10px; }
+.class-pick select:disabled { background:#f3f5f8; color:#8a94a3; cursor:not-allowed; opacity:1; }
 .icon-btn { width:38px; height:38px; border:1px solid var(--line); border-radius:11px; background:#fff; color:var(--accent); font-size:18px; }
 
 /* ---------- 布局与导航 ---------- */
@@ -101,6 +103,9 @@ label input,label select { margin-top:6px; }
 .notice-icon { font-size:32px; color:#e0a020; }
 .notice h2 { font-size:17px; margin:8px 0; }
 .notice p { font-size:13px; color:var(--sub); line-height:1.7; margin:0; }
+.notice-actions { margin-top:16px; }
+.notice-logout { border:1px solid #e0a020; background:#fff; color:#a86400; font-size:13px; padding:8px 20px; border-radius:8px; cursor:pointer; transition:background .15s,color .15s; }
+.notice-logout:hover { background:#e0a020; color:#fff; }
 .toast { position:fixed; left:50%; bottom:30px; transform:translate(-50%,140%); background:#16223a; color:#fff; border-radius:11px; padding:12px 20px; font-size:13px; z-index:40; transition:transform .25s; box-shadow:0 12px 30px rgba(0,0,0,.2); }
 .toast.show { transform:translate(-50%,0); }
 

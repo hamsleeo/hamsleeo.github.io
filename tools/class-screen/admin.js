@@ -94,6 +94,9 @@
     if (!hasClass) { $('#myName').textContent = access ? access.displayName : '班主任'; return; }
     $('#who').textContent = access.displayName + ' · ' + (isAdmin ? '管理员' : '班主任');
     renderClassOptions();
+    // 班级由管理员分配：管理员可切换，班主任只读不可选
+    $('#classSelect').disabled = !isAdmin;
+    $('#classSelect').title = isAdmin ? '切换当前班级' : '班级由管理员分配，班主任不可自行切换';
     renderProfile();
   }
   async function initAccess() {
@@ -140,7 +143,9 @@
           '<div class="user-actions">' + (isAdmin && adminCount <= 1
             ? '<button class="mini" disabled title="至少保留一名管理员">最后管理员不可降级</button>'
             : '<button class="mini" data-set-role="' + esc(u.user_id) +
-              '" data-next-role="' + (isAdmin ? 'teacher' : 'admin') + '">' + (isAdmin ? '降为班主任' : '设为管理员') + '</button>') +
+              '" data-next-role="teacher">' + (isAdmin ? '降为班主任' : '设为班主任') + '</button>') +
+          (isAdmin ? '' : '<button class="mini sub" data-set-role="' + esc(u.user_id) +
+              '" data-next-role="admin">设为管理员</button>') +
           (isAdmin ? '' : '<button class="mini" style="color:#e05a5a" data-delete-user="' + esc(u.user_id) +
            '" data-delete-name="' + esc(u.display_name) + '">删除班主任</button>') + '</div>' +
           '</div>';
@@ -700,6 +705,9 @@
     $('#loginPassword').value = '';
     $('#appView').hidden = true; $('#authView').hidden = false; switchAuth('login');
   });
+  // 待分配卡片里的退出入口：复用侧边栏同一套退出逻辑
+  var noAccessLogout = $('#noAccessLogout');
+  if (noAccessLogout) noAccessLogout.addEventListener('click', function () { $('#logout').click(); });
   $('#openScreen').addEventListener('click', function () { window.open(CloudAPI.boardUrl(), '_blank'); });
   $('#openScreen2').addEventListener('click', function () { window.open(CloudAPI.boardUrl(), '_blank'); });
   $('#changePwd').addEventListener('click', async function () {
@@ -921,10 +929,12 @@
     var roleBtn = e.target.closest('[data-set-role]');
     if (roleBtn) {
       var toAdmin = roleBtn.dataset.nextRole === 'admin';
-      if (!confirm(toAdmin ? '确定把该用户设为管理员吗？管理员可管理所有班级。' : '确定把该用户降为班主任吗？')) return;
+      var label = (roleBtn.textContent || '').trim();
+      var tip = '确定把该用户' + label + '吗？' + (toAdmin ? '\n\n管理员可管理所有班级。' : '\n\n设为班主任后，还需勾选下方班级才会出现对应大屏。');
+      if (!confirm(tip)) return;
       try {
         await CloudAPI.setUserRole(roleBtn.dataset.setRole, roleBtn.dataset.nextRole);
-        await initAccess(); await renderAdminPanel(); toast(toAdmin ? '已设为管理员' : '已降为班主任');
+        await initAccess(); await renderAdminPanel(); toast('已' + label);
       } catch (err) { toast('操作失败：' + err.message); }
       return;
     }
