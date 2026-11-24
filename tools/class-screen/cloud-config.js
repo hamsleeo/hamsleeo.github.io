@@ -12,7 +12,7 @@
  */
 (function () {
   // ↓↓↓ 部署好 Worker 后，把地址粘贴到引号里 ↓↓↓
-  var WORKER = '';
+  var WORKER = 'https://class-screen-proxy.38810621.workers.dev';
   // ↑↑↑ 只需改这一行 ↑↑↑
 
   var CLOUD = 'https://class-screen-72644.app.workbuddy.host';
