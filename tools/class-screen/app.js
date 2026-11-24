@@ -973,17 +973,6 @@
     var text = (s && s.text || '').trim();
     if (!text) return;
     var duration = Math.max(3, +s.duration || 12);
-    // 暴露实时喊话状态给桌面端 CDP 读取。网页蒙版在浏览器窗口内无法置顶于
-    // 其他软件之上；桌面控制台读到这里后弹 TopMost 蒙版，保证喊话总被看到。
-    try {
-      if (document.body) document.body.setAttribute('data-live-shout', JSON.stringify({
-        id: s.id || (text + '|' + Date.now()),
-        text: text,
-        from: s.from || '班主任',
-        duration: duration,
-        startedAt: Date.now()
-      }));
-    } catch (e) {}
     var overlay = $('#shoutOverlay');
     var textEl = $('#shoutTextDisplay');
     var fromEl = $('#shoutFrom');
@@ -993,6 +982,19 @@
     if (fromEl) fromEl.textContent = (s.from || '班主任') + ' · ' + ((s.createdAt && new Date(s.createdAt).toTimeString().slice(0, 5)) || new Date().toTimeString().slice(0, 5));
     hideShout();
     overlay.classList.add('show');
+    // 暴露实时喊话状态给桌面端 CDP 读取。网页蒙版在浏览器窗口内无法置顶于
+    // 其他软件之上；桌面控制台读到这里后弹 TopMost 蒙版，保证喊话总被看到。
+    // ★必须放在 hideShout() 之后★：hideShout 会 removeAttribute，若放在它之前
+    // 属性会被立刻清掉，桌面控制台永远读不到 → 强制置顶蒙版不弹（2026-11-24 修复）。
+    try {
+      if (document.body) document.body.setAttribute('data-live-shout', JSON.stringify({
+        id: s.id || (text + '|' + Date.now()),
+        text: text,
+        from: s.from || '班主任',
+        duration: duration,
+        startedAt: Date.now()
+      }));
+    } catch (e) {}
     var hideMs = duration * 1000;
     var shoutCfg = { voice: s.voice, voiceSpeed: s.voiceSpeed };
     // 若浏览器尚未由用户手势激活语音，显示“点击开启声音”引导；
