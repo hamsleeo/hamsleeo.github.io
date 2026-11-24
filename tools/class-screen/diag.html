@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>云端数据诊断 · 班务大屏</title>
+  <style>
+    :root {
+      --bg: #f5f6f8;
+      --card: #fff;
+      --line: #e3e6eb;
+      --text: #1f2430;
+      --muted: #6b7280;
+      --primary: #2563eb;
+      --ok: #16a34a;
+      --warn: #d97706;
+      --err: #dc2626;
+      --admin-bg: #fff1f0;
+      --me-bg: #eef4ff;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      padding: 24px 16px 60px;
+    }
+    .wrap { max-width: 960px; margin: 0 auto; }
+    h1 { font-size: 22px; margin: 0 0 4px; }
+    .lead { color: var(--muted); font-size: 14px; margin: 0 0 20px; }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 16px;
+      box-shadow: 0 1px 3px rgba(0,0,0,.04);
+    }
+    .card h2 { font-size: 16px; margin: 0 0 12px; }
+    .tabs { display: flex; gap: 8px; margin-bottom: 14px; }
+    .tab {
+      border: 1px solid var(--line);
+      background: #fafbfc;
+      border-radius: 8px;
+      padding: 8px 14px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    .tab.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+    .pane { display: none; }
+    .pane.active { display: block; }
+    .row { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
+    input {
+      flex: 1 1 200px;
+      min-width: 0;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 10px 12px;
+      font-size: 14px;
+    }
+    button.primary {
+      border: 0;
+      background: var(--primary);
+      color: #fff;
+      border-radius: 8px;
+      padding: 10px 18px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+    button.primary:disabled { opacity: .6; cursor: not-allowed; }
+    button.ghost {
+      border: 1px solid var(--line);
+      background: #fff;
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 14px;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .status { min-height: 22px; font-size: 14px; margin-top: 6px; color: var(--muted); }
+    .status.err { color: var(--err); }
+    .status.ok { color: var(--ok); }
+    pre {
+      margin: 0;
+      background: #f8f9fb;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 12px;
+      font-size: 12.5px;
+      white-space: pre-wrap;
+      word-break: break-all;
+      max-height: 320px;
+      overflow: auto;
+    }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th, td { border: 1px solid var(--line); padding: 8px 10px; text-align: left; vertical-align: top; }
+    th { background: #f8f9fb; }
+    tr.admin { background: var(--admin-bg); }
+    tr.me { background: var(--me-bg); }
+    .tag {
+      display: inline-block;
+      padding: 1px 8px;
+      border-radius: 20px;
+      font-size: 12px;
+      background: #eef0f3;
+      color: var(--muted);
+      margin-right: 4px;
+    }
+    .tag.admin { background: #ffe0dc; color: var(--err); }
+    .tag.teacher { background: #e8f0fe; color: var(--primary); }
+    .conclusion {
+      border-left: 4px solid var(--warn);
+      background: #fffbeb;
+      padding: 10px 14px;
+      border-radius: 6px;
+      font-size: 14px;
+      margin-bottom: 16px;
+    }
+    .toolbar { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
+    .hidden { display: none !important; }
+    a { color: var(--primary); }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>云端数据诊断</h1>
+    <p class="lead">登录后自动读取云端角色表、班级授权与当前账号角色，用于排查「为什么不是管理员 / 没分配班级」。本页只读取数据，不修改任何云端记录。</p>
+
+    <div class="card" id="loginCard">
+      <h2>第一步：登录</h2>
+      <div class="tabs">
+        <button class="tab active" data-pane="code">验证码登录</button>
+        <button class="tab" data-pane="pwd">密码登录</button>
+      </div>
+
+      <div class="pane active" data-pane="code">
+        <div class="row">
+          <input id="codePhone" type="tel" maxlength="11" placeholder="11 位手机号" />
+          <button class="ghost" id="sendCode">获取验证码</button>
+        </div>
+        <div class="row">
+          <input id="codeValue" type="text" placeholder="短信验证码" />
+          <button class="primary" id="codeLogin">登录并诊断</button>
+        </div>
+      </div>
+
+      <div class="pane" data-pane="pwd">
+        <div class="row">
+          <input id="pwdPhone" type="tel" maxlength="11" placeholder="11 位手机号" />
+          <input id="pwdValue" type="password" placeholder="密码" />
+        </div>
+        <div class="row">
+          <button class="primary" id="pwdLogin">登录并诊断</button>
+        </div>
+      </div>
+
+      <div class="status" id="status"></div>
+    </div>
+
+    <div class="card hidden" id="diagCard">
+      <h2>第二步：诊断结果</h2>
+      <div class="toolbar">
+        <button class="ghost" id="refresh">重新读取</button>
+        <button class="ghost" id="copyAll">复制诊断结果</button>
+        <button class="ghost" id="logout">退出登录</button>
+      </div>
+      <div id="conclusionBox"></div>
+      <p id="diagStatus" class="status"></p>
+
+      <h2>当前登录用户</h2>
+      <pre id="curUser"></pre>
+
+      <h2 style="margin-top:16px">角色表 class_roles（红=管理员，蓝=当前账号）</h2>
+      <div id="rolesBox"></div>
+
+      <h2 style="margin-top:16px">班级授权 teacher_classes</h2>
+      <pre id="assignBox"></pre>
+
+      <h2 style="margin-top:16px">班级列表 classes</h2>
+      <pre id="classesBox"></pre>
+
+      <h2 style="margin-top:16px">原始明细（含接口报错，便于排查）</h2>
+      <pre id="rawBox"></pre>
+    </div>
+  </div>
+
+  <script src="vendor/workbuddy-cloud-sdk.js?v=20261123k"></script>
+  <script src="cloud-config.js?v=20261124w3"></script>
+  <script src="cloud.js?v=20261124auth1"></script>
+  <script>
+  (function () {
+    'use strict';
+    var api = window.CloudAPI;
+    var session = null;
+    var otp = null;
+    var $ = function (id) { return document.getElementById(id); };
+
+    function fmt(v) {
+      if (v === undefined) return '(undefined)';
+      try { return typeof v === 'string' ? v : JSON.stringify(v, null, 2); }
+      catch (e) { return String(v); }
+    }
+    function setStatus(msg, kind) {
+      var el = $('status');
+      el.textContent = msg || '';
+      el.className = 'status' + (kind ? ' ' + kind : '');
+    }
+    function diagStatus(msg, kind) {
+      var el = $('diagStatus');
+      el.textContent = msg || '';
+      el.className = 'status' + (kind ? ' ' + kind : '');
+    }
+    function rawLine(label, value) {
+      var box = $('rawBox');
+      box.textContent += (box.textContent ? '\n' : '') + '=== ' + label + ' ===\n' + fmt(value) + '\n';
+    }
+
+    document.querySelectorAll('.tab').forEach(function (t) {
+      t.addEventListener('click', function () {
+        document.querySelectorAll('.tab').forEach(function (x) { x.classList.remove('active'); });
+        document.querySelectorAll('.pane').forEach(function (x) { x.classList.remove('active'); });
+        t.classList.add('active');
+        document.querySelector('.pane[data-pane="' + t.dataset.pane + '"]').classList.add('active');
+        setStatus('');
+      });
+    });
+
+    if (!api) {
+      setStatus('云端脚本未加载，请刷新页面', 'err');
+      return;
+    }
+    api.init();
+
+    $('sendCode').addEventListener('click', async function () {
+      var phone = $('codePhone').value.trim();
+      if (!/^1\d{10}$/.test(phone)) { setStatus('请输入正确的 11 位手机号', 'err'); return; }
+      this.disabled = true;
+      setStatus('正在发送验证码…');
+      try {
+        var r = await api.sendPhoneCode(phone);
+        otp = { phone: phone, verificationId: r.verificationId, isExistingUser: r.isExistingUser };
+        rawLine('sendPhoneCode 返回', r);
+        setStatus('验证码已发送。' + (r.isExistingUser ? '该手机号已注册。' : '该手机号未注册。'), 'ok');
+      } catch (e) {
+        setStatus('发送失败：' + e.message, 'err');
+      } finally { this.disabled = false; }
+    });
+
+    $('codeLogin').addEventListener('click', async function () {
+      var phone = $('codePhone').value.trim();
+      var code = $('codeValue').value.trim();
+      if (!otp || otp.phone !== phone || !otp.verificationId) {
+        setStatus('请先点「获取验证码」', 'err'); return;
+      }
+      if (!code) { setStatus('请输入验证码', 'err'); return; }
+      this.disabled = true;
+      setStatus('正在登录…');
+      try {
+        var s = await api.verifyPhoneCode(phone, otp.verificationId, !!otp.isExistingUser, code);
+        session = (s && s.session) || s || null;
+        await afterLogin();
+      } catch (e) {
+        setStatus('登录失败：' + e.message, 'err');
+      } finally { this.disabled = false; }
+    });
+
+    $('pwdLogin').addEventListener('click', async function () {
+      var phone = $('pwdPhone').value.trim();
+      var pwd = $('pwdValue').value;
+      if (!/^1\d{10}$/.test(phone) || !pwd) { setStatus('请输入手机号和密码', 'err'); return; }
+      this.disabled = true;
+      setStatus('正在登录…');
+      try {
+        var s = await api.signInWithPassword(phone, pwd);
+        session = (s && s.session) || s || null;
+        await afterLogin();
+      } catch (e) {
+        setStatus('登录失败：' + e.message, 'err');
+      } finally { this.disabled = false; }
+    });
+
+    $('refresh').addEventListener('click', function () { runDiagnosis(); });
+    $('copyAll').addEventListener('click', function () {
+      var text = $('conclusionBox').innerText + '\n\n' +
+        '当前登录用户：\n' + $('curUser').textContent + '\n\n' +
+        '角色表：\n' + $('rolesBox').innerText + '\n\n' +
+        '班级授权：\n' + $('assignBox').textContent + '\n\n' +
+        '班级列表：\n' + $('classesBox').textContent + '\n\n' +
+        '原始明细：\n' + $('rawBox').textContent;
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(function () { diagStatus('已复制到剪贴板', 'ok'); },
+          function () { diagStatus('复制失败，请手动选中文本复制', 'err'); });
+      } else {
+        diagStatus('当前浏览器不支持自动复制，请手动选中文本', 'err');
+      }
+    });
+    $('logout').addEventListener('click', async function () {
+      try { await api.signOut(); } catch (e) {}
+      session = null;
+      $('diagCard').classList.add('hidden');
+      $('loginCard').classList.remove('hidden');
+      setStatus('已退出', 'ok');
+    });
+
+    async function afterLogin() {
+      var s = session || await api.getSession();
+      if (!s || !s.user) { setStatus('登录成功但未取到会话信息', 'err'); return; }
+      session = s;
+      $('loginCard').classList.add('hidden');
+      $('diagCard').classList.remove('hidden');
+      await runDiagnosis();
+    }
+
+    async function runDiagnosis() {
+      $('rawBox').textContent = '';
+      $('conclusionBox').innerHTML = '';
+      diagStatus('正在读取云端数据…');
+      var s = session || await api.getSession();
+      if (!s || !s.user) { diagStatus('会话已失效，请重新登录', 'err'); return; }
+      session = s;
+
+      var user = s.user || {};
+      var uid = user.id || user.user_id || '';
+      rawLine('getSession', { user: user, hasAccessToken: !!(s.access_token || s.accessToken) });
+
+      // 权威判定：getMyAccess 内部调用与首次登录相同的 register_class_user 登记 RPC，
+      // 返回的 role 就是当前账号的真实角色（对已登记用户幂等，不会改变数据）
+      var myAccess = null, myAccessErr = null;
+      try { myAccess = await api.getMyAccess(s); }
+      catch (e) { myAccessErr = e.message || String(e); }
+      rawLine('getMyAccess 权威角色返回/错误', myAccessErr ? { error: myAccessErr } : myAccess);
+      var authoritativeRole = myAccess ? myAccess.role : null;
+
+      $('curUser').textContent = fmt({
+        id: uid,
+        phone: user.phone || '',
+        name: user.name || user.display_name || '',
+        email: user.email || '',
+        authoritativeRole: authoritativeRole || ('读取失败：' + (myAccessErr || '未知')),
+        myAccess: myAccess,
+        rawUser: user
+      });
+
+      // 读取角色表 + 授权（用已登录会话，走 X-SDK-Auth 还原）
+      var users = null, usersErr = null;
+      try { users = await api.listUsers(); }
+      catch (e) { usersErr = e.message || String(e); }
+      rawLine('listUsers 原始返回/错误', usersErr ? { error: usersErr } : users);
+
+      rawLine('（授权明细见角色表内 classes 字段）', 'listUsers 已合并 teacher_classes');
+
+      var classes = null, classErr = null;
+      try { classes = await api.listClasses(); }
+      catch (e) { classErr = e.message || String(e); }
+      rawLine('listClasses 原始返回/错误', classErr ? { error: classErr } : classes);
+      $('assignBox').textContent = usersErr
+        ? '读取失败：' + usersErr
+        : fmt((users || []).map(function (u) { return { user_id: u.user_id, display_name: u.display_name, classes: u.classes }; }));
+      $('classesBox').textContent = classErr ? '读取失败：' + classErr : fmt(classes);
+
+      // 权威角色优先（来自 register_class_user，与首次登录判定同一逻辑）
+      var myRole = authoritativeRole || (myAccessErr
+        ? '(权威角色读取失败：' + myAccessErr + ')'
+        : '(权威角色未知)');
+
+      function verdict(adminNames) {
+        var c = '当前账号权威角色：<b>' + escapeHtml(myRole) + '</b>。';
+        if (myRole === 'admin') {
+          c += ' 你已是管理员，可回到 admin.html 的「系统 / 权限管理」页给班主任分配班级。';
+        } else if (myRole === 'blocked') {
+          c += ' 该账号已被管理员停用。';
+        } else {
+          c += ' 你当前是普通班主任。';
+        }
+        if (adminNames) {
+          c += ' 角色表里读到管理员：' + escapeHtml(adminNames) + '。';
+          if (myRole !== 'admin') {
+            c += ' 若你确信自己是首位开发者，说明这些管理员是早期测试账号占了名额；把本页结果发给开发者即可修正。';
+          }
+        }
+        return c;
+      }
+
+      // 渲染角色表 + 结论
+      var box = $('rolesBox');
+      box.innerHTML = '';
+      if (usersErr) {
+        box.innerHTML = '<p style="color:var(--err)">读取角色表失败：' + escapeHtml(usersErr) + '</p>';
+        $('conclusionBox').innerHTML = '<div class="conclusion">' + verdict(null) + ' 角色表读取失败，请把下方「原始明细」发给开发者。</div>';
+        diagStatus('部分读取失败', 'err');
+        return;
+      }
+      if (!users || !users.length) {
+        box.innerHTML = '<p style="color:var(--warn)">角色表返回为空（可能是数据为空，或当前账号没有读取权限）。</p>';
+        $('conclusionBox').innerHTML = '<div class="conclusion">' + verdict(null) + ' 角色表为空或无权读取，请把下方原始明细发给开发者。</div>';
+        diagStatus('读取完成（角色表空）', 'ok');
+        return;
+      }
+
+      var admins = users.filter(function (u) { return u.role === 'admin'; });
+      var adminNames = admins.length
+        ? admins.map(function (a) { return (a.display_name || a.user_id) + ' [' + a.role + ']'; }).join('、')
+        : '（无）';
+
+      var table = document.createElement('table');
+      table.innerHTML = '<thead><tr><th>角色</th><th>显示名</th><th>user_id</th><th>已分配班级</th><th>创建时间</th></tr></thead>';
+      var tbody = document.createElement('tbody');
+      users.forEach(function (u) {
+        var tr = document.createElement('tr');
+        if (u.role === 'admin') tr.className = 'admin';
+        else if (u.user_id === uid) tr.className = 'me';
+        var roleTag = '<span class="tag ' + (u.role === 'admin' ? 'admin' : 'teacher') + '">' + escapeHtml(u.role || '(无)') + '</span>';
+        if (u.user_id === uid) roleTag += '<span class="tag">当前账号</span>';
+        tr.innerHTML = '<td>' + roleTag + '</td>' +
+          '<td>' + escapeHtml(u.display_name || '未命名用户') + '</td>' +
+          '<td style="word-break:break-all">' + escapeHtml(u.user_id || '') + '</td>' +
+          '<td>' + escapeHtml((u.classes || []).join(', ') || '（无）') + '</td>' +
+          '<td>' + escapeHtml(u.created_at || '') + '</td>';
+        tbody.appendChild(tr);
+      });
+      table.appendChild(tbody);
+      box.appendChild(table);
+
+      var conclusion = verdict(adminNames) + ' 角色表共 ' + users.length + ' 人，其中管理员 ' + admins.length + ' 人。';
+      $('conclusionBox').innerHTML = '<div class="conclusion">' + conclusion + '</div>';
+      diagStatus('读取完成', 'ok');
+    }
+
+    function escapeHtml(s) {
+      return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+      });
+    }
+
+    // 如果本标签页已有会话（例如从 admin.html 同标签跳转过来），自动进入诊断
+    (async function () {
+      try {
+        var r = await api.restoreAuth();
+        var s = (r && r.session) || await api.getSession();
+        if (s && s.user) { session = s; await afterLogin(); }
+      } catch (e) { /* 未登录时保持登录界面 */ }
+    })();
+  })();
+  </script>
+</body>
+</html>
