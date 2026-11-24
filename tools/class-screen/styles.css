@@ -261,11 +261,11 @@ button { cursor: pointer; }
 .fun-unfinished { font-size: 11px; color: var(--ink-3); margin-top: 6px; line-height: 1.5; }
 .fun-unfinished b { color: var(--negative); font-weight: 500; }
 
-/* 公告 */
-.notice-list { flex: 1; padding: 8px 14px 12px; display: flex; flex-direction: column; gap: 8px; overflow: hidden; }
-.notice-item { border-left: 3px solid var(--accent-2); background: rgba(255,255,255,.05); border-radius: 0 9px 9px 0; padding: 8px 11px; }
-.notice-item .n-title { font-size: 11px; color: var(--accent-2); margin-bottom: 3px; }
-.notice-item .n-text { font-size: 12px; line-height: 1.55; color: #e6eeff; }
+/* 公告：条目内边距略收，保证 3 条 + 统计行完整显示，不贴边被裁 */
+.notice-list { flex: 1; padding: 6px 14px 5px; display: flex; flex-direction: column; gap: 5px; overflow: hidden; }
+.notice-item { border-left: 3px solid var(--accent-2); background: rgba(255,255,255,.05); border-radius: 0 9px 9px 0; padding: 4px 10px; }
+.notice-item .n-title { font-size: 11px; color: var(--accent-2); margin-bottom: 1px; }
+.notice-item .n-text { font-size: 12px; line-height: 1.5; color: #e6eeff; }
 .notice-more { font-size: 11px; color: var(--ink-3); margin-top: auto; }
 
 /* 关注与流水 */
@@ -557,11 +557,13 @@ body.mode-display .head-action-btn { display: none !important; }
    ============================================================ */
 :root { --panel: rgba(15, 26, 46, .74); }
 
-.stage { gap: 16px; padding: 20px 20px 22px 6px; }
+/* 末行（公告/请假/关注）需要完整容纳 3 条公告 + 统计行：
+   上端各行各回收一点高度，末行最小高度提高；底部留白同步收窄。 */
+.stage { gap: 14px; padding: 18px 20px 14px 6px; }
 
 .dashboard-grid {
-  gap: 18px;
-  grid-template-rows: 124px 252px 272px minmax(228px, 1fr);
+  gap: 16px;
+  grid-template-rows: 112px 246px 258px minmax(280px, 1fr);
 }
 
 .panel-head { height: 48px; }
@@ -572,3 +574,33 @@ body.mode-display .head-action-btn { display: none !important; }
 .notice-list, .leave-list, .attention-body {
   padding-left: 16px; padding-right: 16px;
 }
+
+/* ============================================================
+   面板裁切修复（保持字号可读，优先让隐藏内容完整露出）
+   ============================================================ */
+.topbar { height: 58px; }
+.stage { gap: 10px; padding: 14px 20px 10px 6px; }
+.dashboard-grid {
+  gap: 14px;
+  grid-template-rows: 136px 234px 272px minmax(284px, 1fr);
+}
+
+/* 今日课表：卡片原本需要 110px，压缩卡片留白后可在首行完整显示 */
+.schedule-strip { padding-top: 6px; padding-bottom: 6px; }
+.schedule-card { padding: 6px 10px; }
+.sc-subject { font-size: 21px; }
+.sc-top, .sc-time { font-size: 12px; }
+
+/* 积分总览 / 今日榜样：内容区留白略收，避免图表和最后一位榜样被裁 */
+.overview-body { padding-top: 6px; padding-bottom: 8px; gap: 6px; }
+.ov-stats { gap: 5px; }
+.ov-stat { padding: 5px 8px; }
+.ov-foot { font-size: 11px; }
+.model-list { padding-top: 6px; padding-bottom: 8px; gap: 5px; }
+.model-row { padding: 4px 9px; }
+.avatar { width: 30px; height: 30px; font-size: 16px; }
+
+/* 公告栏：确保 3 条公告 + 统计行完整显示 */
+.notice-list { padding-top: 5px; padding-bottom: 4px; gap: 4px; }
+.notice-item { padding-top: 3px; padding-bottom: 3px; }
+.notice-more { font-size: 12px; }
