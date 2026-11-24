@@ -8,6 +8,7 @@
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%2343e08a'/%3E%3Ctext x='32' y='44' font-size='34' text-anchor='middle' fill='%2307140e' font-family='sans-serif'%3E%E7%AE%80%3C/text%3E%3C/svg%3E">
 <link rel="stylesheet" href="assets/portal.css">
 <link rel="stylesheet" href="assets/admin.css">
+<link rel="stylesheet" href="assets/admin-downloads.css">
 </head>
 <body>
 
@@ -73,6 +74,11 @@
 
   <!-- 管理主界面 -->
   <section id="viewAdmin" hidden>
+    <div class="admin-tabs" id="adminTabs">
+      <button class="atab active" data-panel="panelTools" type="button">工具入口</button>
+      <button class="atab" data-panel="panelDownloads" type="button">软件管理</button>
+    </div>
+    <div id="panelTools">
     <div class="admin-head">
       <div>
         <h2>工具入口管理</h2>
@@ -86,6 +92,22 @@
     <div class="admin-table" id="toolList"></div>
     <p class="admin-hint">「停用」只从前台隐藏，不会删除记录；删除后可用同样的 ID 重新添加。所有改动实时写入云端，前台刷新即可看到。</p>
     <p class="admin-hint">前台另有四张<strong>随站点内置的卡片</strong>，写在 <code>assets/tools.js</code> 中、不占数据库记录，所以不会出现在上面的表格里：三张外部资源（<code>teacherlab-score</code> 成绩分析、<code>teacherlab-class-points</code> 班级积分、<code>teacherlab-physics-lab</code> 物理实验实时大屏）和一张本平台自研工具（<code>ppt-crop</code> 习题 PPT）。要改它们的文案或排序，用对应 ID 在「新增工具」里建一条记录即可覆盖；要彻底移除请改代码。</p>
+    </div>
+
+    <div id="panelDownloads" hidden>
+      <div class="admin-head">
+        <div>
+          <h2>软件管理</h2>
+          <p class="sub" id="dlAdminSummary">保存后前台刷新即可看到变化</p>
+        </div>
+        <div class="grow"></div>
+        <button class="btn btn-sm" id="dlReloadBtn" type="button">↻ 刷新列表</button>
+        <button class="btn btn-primary btn-sm" id="dlAddBtn" type="button">＋ 新增软件</button>
+      </div>
+      <div class="admin-who"><span class="who-dot"></span>安装包请先放进仓库的 <code>files/</code> 目录，下载地址填 <code>files/文件名.exe</code>；GitHub Pages 不能接收网页上传，后台只负责登记信息与链接。</div>
+      <div class="admin-table" id="dlList"></div>
+      <p class="admin-hint">「停用」只从前台隐藏，不删除记录。单文件别超过 100 MB；几百 MB 的（WPS、希沃白板等）建议放蓝奏云 / 微云，把地址填到「备用链接」，仓库里只放小工具，否则推送会越来越慢。</p>
+    </div>
   </section>
 </main>
 
@@ -148,10 +170,48 @@
   </div>
 </div>
 
+<!-- 软件管理：新增 / 编辑 -->
+<div class="overlay" id="dlOverlay">
+  <div class="modal">
+    <div class="modal-head"><h3 id="dlEditTitle">新增软件</h3><button class="x" id="dlEditClose" title="关闭">×</button></div>
+    <form id="dlForm">
+      <div class="modal-body">
+        <p class="form-intro">只填 <b>ID、名称、下载地址</b> 就能上架；版本、体积这些建议一起填，前台才好对比。</p>
+        <div class="field-row">
+          <div class="field"><label for="dId">ID *（英文，不可重复）</label><input id="dId" required placeholder="wps-office"></div>
+          <div class="field"><label for="dName">软件名称 *</label><input id="dName" required placeholder="WPS Office"></div>
+        </div>
+        <div class="field"><label for="dUrl">下载地址 *</label><input id="dUrl" required placeholder="files/wps-office.exe 或 https://…"><div class="field-hint">仓库内文件填 files/ 下的相对路径；网盘等外部地址填 https:// 完整网址。</div></div>
+        <div class="field-row">
+          <div class="field"><label for="dVersion">版本</label><input id="dVersion" placeholder="12.1.0"></div>
+          <div class="field"><label for="dSize">体积</label><input id="dSize" placeholder="215 MB 或 225443840"></div>
+        </div>
+        <div class="field-row">
+          <div class="field"><label for="dPlatform">适用系统</label><input id="dPlatform" placeholder="Windows 10/11 64 位"></div>
+          <div class="field"><label for="dCategory">分类</label><input id="dCategory" list="dlCatList" placeholder="办公软件"><datalist id="dlCatList"><option>系统工具</option><option>办公软件</option><option>教学工具</option><option>多媒体</option><option>其他</option></datalist></div>
+        </div>
+        <div class="field-row">
+          <div class="field"><label for="dIcon">图标</label><input id="dIcon" value="⬇" maxlength="6"></div>
+          <div class="field"><label for="dSort">排序（小号在前）</label><input id="dSort" type="number" value="10" min="0" max="999"></div>
+        </div>
+        <div class="field"><label for="dMirror">备用链接（网盘等）</label><input id="dMirror" placeholder="https://… 可留空"></div>
+        <div class="field"><label for="dDesc">一句话说明</label><textarea id="dDesc" placeholder="这个软件能做什么、适合谁用"></textarea></div>
+        <div class="field"><label for="dNote">安装提示</label><input id="dNote" placeholder="例：安装时去掉捆绑勾选；无需注册"></div>
+        <label class="check-line"><input type="checkbox" id="dEnabled" checked> 在前台显示（上架）</label>
+      </div>
+      <div class="modal-foot">
+        <button type="button" class="btn" id="dlEditCancel">取消</button>
+        <button type="submit" class="btn btn-primary">保存到云端</button>
+      </div>
+    </form>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@tencent-ai/workbuddy-cloud-sdk@dev/lib/index.global.js"></script>
 <script src="assets/cloud-config.js"></script>
 <script src="assets/admin.js"></script>
+<script src="assets/admin-downloads.js"></script>
 </body>
 </html>

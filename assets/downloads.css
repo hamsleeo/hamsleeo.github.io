@@ -1,0 +1,67 @@
+/* 软件下载页 + 首页下载入口块（沿用 portal.css 的深色变量） */
+.dl-search { max-width: 620px; margin: 0 0 20px; }
+
+.dl-list { display: grid; grid-template-columns: 1fr; gap: 14px; }
+
+.dl-card {
+  display: flex; gap: 16px; align-items: flex-start;
+  background: var(--panel); border: 1px solid var(--line); border-radius: var(--r);
+  padding: 16px 18px; box-shadow: var(--shadow);
+  transition: transform .18s, border-color .18s, box-shadow .18s;
+}
+.dl-card:hover { transform: translateY(-2px); border-color: rgba(67, 224, 138, .38); box-shadow: 0 16px 38px rgba(0, 0, 0, .45); }
+
+.dl-ico {
+  width: 54px; height: 54px; flex: 0 0 54px; border-radius: 14px;
+  display: grid; place-items: center; font-size: 26px;
+  background: linear-gradient(140deg, #14342a, #1f5a42);
+  border: 1px solid rgba(67, 224, 138, .22);
+}
+
+.dl-main { flex: 1; min-width: 0; }
+.dl-title { display: flex; align-items: center; gap: 9px; flex-wrap: wrap; }
+.dl-title h3 { margin: 0; font-size: 16px; letter-spacing: -.2px; }
+.dl-ver {
+  font-size: 11.5px; font-weight: 650; color: var(--green-2);
+  background: rgba(67, 224, 138, .1); border: 1px solid rgba(67, 224, 138, .2);
+  padding: 2px 8px; border-radius: 6px;
+}
+.dl-desc { color: var(--ink-2); font-size: 13px; line-height: 1.7; margin: 7px 0 9px; }
+.dl-meta { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 9px; }
+.dl-chip {
+  font-size: 11.5px; color: var(--ink-2);
+  background: rgba(120, 180, 160, .08); border: 1px solid rgba(120, 180, 160, .14);
+  padding: 3px 9px; border-radius: 6px;
+}
+.dl-chip.size { color: #a9d9ff; border-color: rgba(90, 160, 224, .26); background: rgba(90, 160, 224, .09); }
+.dl-note {
+  color: var(--ink-3); font-size: 11.5px; line-height: 1.65;
+  border-left: 2px solid rgba(67, 224, 138, .32); padding-left: 9px; margin: 0 0 11px;
+}
+.dl-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+.dl-tip { color: var(--ink-3); font-size: 12px; line-height: 1.75; margin: 18px 0 0; }
+
+/* 首页「软件下载」入口块 */
+.dl-entry { margin: 34px 0 6px; }
+.dl-entry-card {
+  display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+  background: linear-gradient(120deg, rgba(24, 58, 46, .92), rgba(18, 34, 46, .92));
+  border: 1px solid var(--line); border-radius: var(--r);
+  padding: 18px 20px; box-shadow: var(--shadow);
+}
+.dl-entry-ico {
+  width: 48px; height: 48px; flex: 0 0 48px; border-radius: 13px;
+  display: grid; place-items: center; font-size: 24px;
+  background: linear-gradient(140deg, #1a7a55, #43e08a); color: #07140e;
+  box-shadow: 0 0 18px rgba(67, 224, 138, .28);
+}
+.dl-entry-body { flex: 1; min-width: 200px; }
+.dl-entry-body h3 { margin: 0 0 3px; font-size: 16px; }
+.dl-entry-body p { margin: 0; color: var(--ink-2); font-size: 13px; line-height: 1.65; }
+
+@media (max-width: 620px) {
+  .dl-card { flex-direction: column; gap: 12px; }
+  .dl-ico { width: 46px; height: 46px; flex: 0 0 46px; font-size: 22px; }
+  .dl-actions .btn { flex: 1; justify-content: center; }
+}

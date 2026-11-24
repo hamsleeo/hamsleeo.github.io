@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>班务大屏 · 班主任使用手册</title>
+<style>
+  :root{
+    --bg:#f4f7fa; --card:#ffffff; --ink:#1c2634; --ink2:#5a6678; --ink3:#8a94a6;
+    --line:#e4eaf1; --brand:#1f7a94; --brand2:#2a9bb5; --brand-soft:#e8f5f8;
+    --amber:#d98324; --amber-soft:#fff5e6; --green:#2f9e6b; --green-soft:#e9f8f0;
+    --red:#d9534f; --red-soft:#fdecec; --shadow:0 6px 24px rgba(28,52,80,.07);
+    --radius:14px;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+    font-size:15px;line-height:1.75;-webkit-font-smoothing:antialiased}
+
+  /* 顶部 */
+  .hero{background:linear-gradient(120deg,#1c6f88 0%,#2a9bb5 55%,#39b3b0 100%);color:#fff;padding:44px 0 38px;position:relative;overflow:hidden}
+  .hero:before,.hero:after{content:"";position:absolute;border-radius:50%;background:rgba(255,255,255,.09)}
+  .hero:before{width:320px;height:320px;right:-70px;top:-120px}
+  .hero:after{width:200px;height:200px;right:180px;bottom:-120px}
+  .hero-in{max-width:1080px;margin:0 auto;padding:0 24px;position:relative;z-index:1}
+  .hero .kicker{font-size:13px;letter-spacing:3px;opacity:.85;font-weight:600}
+  .hero h1{margin:8px 0 6px;font-size:34px;font-weight:800;letter-spacing:1px}
+  .hero p{margin:0;opacity:.92;font-size:15px;max-width:640px}
+  .badges{margin-top:18px;display:flex;gap:10px;flex-wrap:wrap}
+  .badges span{background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.25);padding:5px 13px;border-radius:20px;font-size:12.5px}
+
+  /* 布局 */
+  .wrap{max-width:1080px;margin:0 auto;padding:28px 24px 80px;display:grid;grid-template-columns:220px 1fr;gap:32px;align-items:start}
+  nav.toc{position:sticky;top:20px;background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:14px 10px;box-shadow:var(--shadow)}
+  nav.toc .toc-t{font-size:12px;color:var(--ink3);font-weight:700;letter-spacing:1px;padding:4px 12px 10px}
+  nav.toc a{display:flex;gap:9px;align-items:center;padding:8px 12px;border-radius:9px;color:var(--ink2);text-decoration:none;font-size:13.5px;transition:.15s}
+  nav.toc a .n{width:20px;height:20px;flex:0 0 20px;border-radius:6px;background:var(--brand-soft);color:var(--brand);font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center}
+  nav.toc a:hover{background:#f3f7fa;color:var(--brand)}
+  nav.toc a.active{background:var(--brand-soft);color:var(--brand);font-weight:700}
+  nav.toc a.active .n{background:var(--brand);color:#fff}
+
+  main section{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:26px 28px;margin-bottom:22px;box-shadow:var(--shadow);scroll-margin-top:20px}
+  .sec-h{display:flex;align-items:center;gap:12px;margin:0 0 6px}
+  .sec-h .ic{width:38px;height:38px;flex:0 0 38px;border-radius:10px;background:var(--brand-soft);color:var(--brand);display:flex;align-items:center;justify-content:center;font-size:20px}
+  .sec-h h2{margin:0;font-size:21px;font-weight:800}
+  .sec-sub{color:var(--ink3);font-size:13px;margin:0 0 18px 50px}
+  h3{font-size:16px;margin:24px 0 10px;padding-left:11px;border-left:3px solid var(--brand2)}
+  p{margin:9px 0}
+  ul,ol{margin:9px 0;padding-left:22px}
+  li{margin:5px 0}
+  strong{color:var(--ink)}
+  code{background:#f0f4f8;border:1px solid var(--line);border-radius:5px;padding:1px 6px;font-family:"SFMono-Regular",Consolas,monospace;font-size:12.5px;color:#b1472f;word-break:break-all}
+  .format{background:#f7f9fc;border:1px dashed #c9d6e2;border-radius:10px;padding:12px 16px;margin:10px 0;font-family:"SFMono-Regular",Consolas,monospace;font-size:13px;line-height:1.9;color:#3c5a72;white-space:pre-wrap}
+
+  .box{border-radius:11px;padding:14px 18px;margin:14px 0;font-size:14px}
+  .box .bt{font-weight:700;margin-bottom:4px;display:flex;align-items:center;gap:7px}
+  .box.info{background:var(--brand-soft);border-left:4px solid var(--brand)}
+  .box.info .bt{color:var(--brand)}
+  .box.warn{background:var(--amber-soft);border-left:4px solid var(--amber)}
+  .box.warn .bt{color:var(--amber)}
+  .box.ok{background:var(--green-soft);border-left:4px solid var(--green)}
+  .box.ok .bt{color:var(--green)}
+  .box.danger{background:var(--red-soft);border-left:4px solid var(--red)}
+  .box.danger .bt{color:var(--red)}
+
+  .steps{counter-reset:st;margin:14px 0}
+  .step{position:relative;padding:12px 16px 12px 52px;border:1px solid var(--line);border-radius:11px;margin:9px 0;background:#fcfdfe}
+  .step:before{counter-increment:st;content:counter(st);position:absolute;left:14px;top:12px;width:26px;height:26px;border-radius:50%;background:var(--brand);color:#fff;font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center}
+  .step b{color:var(--brand)}
+
+  table{width:100%;border-collapse:collapse;margin:12px 0;font-size:13.5px}
+  th,td{border:1px solid var(--line);padding:9px 12px;text-align:left;vertical-align:top}
+  th{background:#f3f7fa;color:var(--ink);font-weight:700}
+  tr:nth-child(even) td{background:#fbfcfe}
+  td code{font-size:12px}
+
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .tile{border:1px solid var(--line);border-radius:11px;padding:14px 16px;background:#fcfdfe}
+  .tile h4{margin:0 0 6px;font-size:14.5px;color:var(--brand)}
+  .tile p{margin:0;font-size:13px;color:var(--ink2)}
+
+  .pill{display:inline-block;background:var(--brand-soft);color:var(--brand);border-radius:6px;padding:1px 8px;font-size:12px;font-weight:700;margin:0 2px}
+  .pill.a{background:var(--amber-soft);color:var(--amber)}
+  .pill.g{background:var(--green-soft);color:var(--green)}
+  .pill.r{background:var(--red-soft);color:var(--red)}
+
+  .faq details{border:1px solid var(--line);border-radius:10px;margin:9px 0;background:#fcfdfe}
+  .faq summary{cursor:pointer;padding:13px 16px;font-weight:700;color:var(--ink);list-style:none;display:flex;gap:10px;align-items:center}
+  .faq summary::-webkit-details-marker{display:none}
+  .faq summary:before{content:"＋";color:var(--brand);font-weight:800}
+  .faq details[open] summary:before{content:"－"}
+  .faq .ans{padding:0 16px 14px 40px;color:var(--ink2);font-size:14px}
+
+  .foot{text-align:center;color:var(--ink3);font-size:12.5px;padding:10px 0 0}
+  .tools-fixed{position:fixed;right:22px;bottom:22px;display:flex;gap:10px;z-index:9}
+  .tools-fixed button{border:none;border-radius:50%;width:46px;height:46px;cursor:pointer;box-shadow:0 6px 18px rgba(0,0,0,.16);font-size:18px;background:var(--brand);color:#fff;transition:.15s}
+  .tools-fixed button:hover{transform:translateY(-2px);background:var(--brand2)}
+
+  @media(max-width:900px){
+    .wrap{grid-template-columns:1fr;padding:18px 14px 70px}
+    nav.toc{position:static;display:flex;overflow-x:auto;gap:4px;padding:8px}
+    nav.toc .toc-t{display:none}
+    nav.toc a{white-space:nowrap;padding:7px 10px}
+    main section{padding:20px 18px}
+    .grid2{grid-template-columns:1fr}
+    .hero h1{font-size:26px}
+  }
+  @media print{
+    body{background:#fff;font-size:12px}
+    .hero{background:#1f7a94 !important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    nav.toc,.tools-fixed{display:none}
+    .wrap{display:block;max-width:none;padding:0}
+    main section{box-shadow:none;border:1px solid #ddd;page-break-inside:avoid;margin-bottom:12px}
+    .box,.tile,.format{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="hero-in">
+    <div class="kicker">CLASS BOARD · 教师使用指南</div>
+    <h1>班务大屏 · 班主任使用手册</h1>
+    <p>从登录到喊话、从点评到积分，一本书带你会用整套系统。手机上就能管理，改完约 5 秒自动同步到教室大屏。</p>
+    <div class="badges">
+      <span>适用角色：班主任 / 管理员</span>
+      <span>版本 20261124</span>
+      <span>免费版 · 无收费功能</span>
+      <span>可打印成 PDF</span>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+  <nav class="toc" id="toc">
+    <div class="toc-t">目录</div>
+    <a href="#quick"><span class="n">0</span>5 分钟快速上手</a>
+    <a href="#intro"><span class="n">1</span>认识这套系统</a>
+    <a href="#start"><span class="n">2</span>登录与账号</a>
+    <a href="#desktop"><span class="n">3</span>教室电脑与悬浮控制台</a>
+    <a href="#screen"><span class="n">4</span>大屏展示什么</a>
+    <a href="#shout"><span class="n">5</span>教室喊话</a>
+    <a href="#review"><span class="n">6</span>行为点评与积分</a>
+    <a href="#stats"><span class="n">7</span>积分统计</a>
+    <a href="#tools"><span class="n">8</span>教学工具</a>
+    <a href="#manage"><span class="n">9</span>班级管理</a>
+    <a href="#access"><span class="n">10</span>管理员专区</a>
+    <a href="#me"><span class="n">11</span>我的账号</a>
+    <a href="#faq"><span class="n">12</span>常见问题</a>
+  </nav>
+
+  <main>
+    <!-- 快速上手 -->
+    <section id="quick">
+      <div class="sec-h"><div class="ic">⚡</div><h2>5 分钟快速上手</h2></div>
+      <p class="sec-sub">第一次用？按这五步走，马上见效。</p>
+      <div class="steps">
+        <div class="step"><b>登录后台。</b>用手机或电脑浏览器打开管理端网址，第一次使用点「首次注册」，用手机号 + 验证码注册并设置密码。首位注册人会自动成为<span class="pill">管理员</span>。</div>
+        <div class="step"><b>等分配班级 / 选好班级。</b>普通班主任注册后需管理员在「班级与权限」里把你设为某班班主任；分配后在顶部「班级」下拉框选中自己的班级。</div>
+        <div class="step"><b>先建学生名单。</b>进入「班级管理 → 学生」，用批量导入一次贴入全班姓名（每行一个），这是点评和点名的基础。</div>
+        <div class="step"><b>填每日展示内容。</b>在「班级管理」里把课程表、今日作业、值日安排按格式填好并保存，大屏约 5 秒后自动更新。</div>
+        <div class="step"><b>试着喊一次话。</b>进入「教室喊话」，输入「请同学们准备好课本」，点「立即喊话到大屏」——大屏立刻弹窗并用真人音色朗读。</div>
+      </div>
+      <div class="box ok"><div class="bt">✓ 记住一句话</div>所有修改都在<strong>后台（管理端）</strong>完成，<strong>教室大屏不用手动操作</strong>，它会自动同步。你只管在手机上改。</div>
+    </section>
+
+    <!-- 认识系统 -->
+    <section id="intro">
+      <div class="sec-h"><div class="ic">◇</div><h2>认识这套系统</h2></div>
+      <p class="sec-sub">两套界面、两种角色，数据实时打通。</p>
+      <div class="grid2">
+        <div class="tile"><h4>大屏（展示端）</h4><p>装在教室电脑上，整屏展示课程、作业、值日、积分、榜样、公告等。已装成软件版本：开机自启、作为桌面壁纸运行，桌面图标照常可用。</p></div>
+        <div class="tile"><h4>管理端（后台）</h4><p>你在手机或电脑上打开，负责改内容、喊话、点评、查积分。网址是在大屏网址后面加 <code>admin.html</code>。</p></div>
+      </div>
+      <h3>两种角色</h3>
+      <table>
+        <tr><th>角色</th><th>能做什么</th></tr>
+        <tr><td><span class="pill">管理员</span></td><td>拥有全部权限，额外多一个「班级与权限」菜单：可新建班级、给老师分配班级和角色、删除或恢复班主任注册信息。<strong>首位注册人自动成为管理员。</strong></td></tr>
+        <tr><td><span class="pill g">班主任</span></td><td>管理自己班级的全部日常功能（喊话、点评、积分、工具、班级内容），但看不到「班级与权限」菜单，也不能改别的班。</td></tr>
+      </table>
+      <div class="box info"><div class="bt">ⓘ 多班隔离</div>每个班有独立的「班级代码」（如 <code>main</code>、<code>class2</code>）。大屏和后台靠班级代码对应到同一个班，班主任只能管理被分配的班级，互不干扰。</div>
+      <h3>访问地址</h3>
+      <p>大屏与管理端在同一站点，示例（<strong>请以安装人员实际发给你的网址为准</strong>）：</p>
+      <div class="format">大屏展示： https://class-screen-72644.app.workbuddy.host/?sharecode=DIEDM4D3JD&amp;class=班级代码
+管理后台： https://class-screen-72644.app.workbuddy.host/admin.html?sharecode=DIEDM4D3JD&amp;class=班级代码</div>
+      <p>其中 <code>class=</code> 后面的就是班级代码；班主任在后台顶部「班级」下拉框切换即可，一般不用手动改网址。</p>
+    </section>
+
+    <!-- 登录 -->
+    <section id="start">
+      <div class="sec-h"><div class="ic">🔑</div><h2>登录与账号</h2></div>
+      <p class="sec-sub">管理端提供三种登录方式，按需选择。</p>
+      <table>
+        <tr><th>方式</th><th>适用场景</th><th>操作</th></tr>
+        <tr><td><span class="pill">首次注册</span></td><td>第一次使用、还没有账号</td><td>填姓名 → 手机号 → 获取验证码 → 设置密码（至少 6 位）→ 再输一次 → 点「注册并登录」。首位注册人自动成为管理员。</td></tr>
+        <tr><td><span class="pill g">密码登录</span></td><td>已设置过密码，日常最常用</td><td>输入 11 位手机号 + 密码 → 点「登录」。</td></tr>
+        <tr><td><span class="pill a">验证码登录</span></td><td>忘记密码 / 没设密码</td><td>输入手机号 → 点「获取验证码」→ 填入短信验证码 → 点「登录」。</td></tr>
+      </table>
+      <div class="box warn"><div class="bt">⚠ 注册后看不到内容？</div>普通班主任注册成功后，如果还没被管理员分配班级，会看到「等待管理员分配班级」的提示。这是正常的——请联系管理员在「班级与权限」里把你设为某班班主任，然后<strong>刷新本页</strong>即可。若账号被移除，会显示「账号已被管理员移除」。</div>
+      <p>登录后在右上角可以看到当前身份、连接状态（显示已连接即表示与云端和大屏同步正常）和班级选择框。</p>
+    </section>
+
+    <!-- 桌面软件 -->
+    <section id="desktop">
+      <div class="sec-h"><div class="ic">🖥</div><h2>教室电脑与悬浮控制台</h2></div>
+      <p class="sec-sub">大屏已经是桌面软件，不用每天开浏览器。</p>
+      <ul>
+        <li><strong>开机自启：</strong>教室电脑开机后，大屏自动启动并以「真壁纸」方式铺满屏幕，同时桌面图标照常可以点击，不影响老师用电脑。</li>
+        <li><strong>画面刷新：</strong>大屏内容每 <strong>5 秒</strong>自动刷新一次；你在后台改的内容很快就能看到。喊话语音是实时的，不受 5 秒影响。</li>
+        <li><strong>悬浮控制台：</strong>屏幕顶部中间有一条小横条，始终浮在最上层，这是你操作大屏的开关。</li>
+      </ul>
+      <h3>悬浮控制台怎么按</h3>
+      <div class="grid2">
+        <div class="tile"><h4>单击（轻点一下）</h4><p>进入「壁纸态」——大屏透明收起，看到并操作桌面图标。适合临时用电脑处理别的事。</p></div>
+        <div class="tile"><h4>长按约 0.6 秒</h4><p>回到「前端态」——大屏重新全屏显示，可正常查看和操作。看完想回桌面再单击即可。</p></div>
+      </div>
+      <div class="box info"><div class="bt">ⓘ 大屏顶部的按钮</div>在大屏右上方还有三个按钮：<code>✦ 快捷点评</code> 直接在屏幕上给学生加减分、<code>✎ 编辑</code> 调整卡片顺序和显示模块、<code>⛶</code> 全屏显示。日常一般用不到，需要时点一下即可。</div>
+      <div class="box ok"><div class="bt">✓ 稳定提示</div>只要软件正常装好，老师<strong>不需要每天开关机操作大屏</strong>。若长时间未更新，先看右上角是否「未连接」，检查教室电脑是否联网。</div>
+    </section>
+
+    <!-- 大屏展示 -->
+    <section id="screen">
+      <div class="sec-h"><div class="ic">▦</div><h2>大屏展示什么</h2></div>
+      <p class="sec-sub">这些卡片的内容都来自你在后台填写的数据。</p>
+      <table>
+        <tr><th>卡片</th><th>显示内容</th><th>在后台哪里改</th></tr>
+        <tr><td>今日课程表 / 当前课程</td><td>今天每节课的时间与科目，并根据当前时间高亮正在上的课</td><td>班级管理 → 课程表</td></tr>
+        <tr><td>今日作业 / 今日消消乐</td><td>各科作业详情；作业完成进度（已完成 / 未完成名单）</td><td>班级管理 → 作业</td></tr>
+        <tr><td>今日值日</td><td>每项值日任务及负责同学</td><td>班级管理 → 值日</td></tr>
+        <tr><td>事件倒计时</td><td>距某个重要日期还有几天</td><td>班级管理 → 班级信息</td></tr>
+        <tr><td>班级积分总览 / 六维成长画像</td><td>班级总积分与德育六维平均分（雷达图）</td><td>行为点评产生数据</td></tr>
+        <tr><td>小组积分榜</td><td>各学习小组积分排名</td><td>班级管理 → 小组 + 行为点评</td></tr>
+        <tr><td>今日榜样</td><td>本周/今日表现突出的同学与称号</td><td>班级管理 → 榜样</td></tr>
+        <tr><td>公告栏</td><td>班级公告，带强调色</td><td>班级管理 → 公告</td></tr>
+        <tr><td>需关注 · 近期流水</td><td>最近的行为点评记录（谁加减分、什么原因）</td><td>行为点评产生数据</td></tr>
+      </table>
+      <div class="box info"><div class="bt">ⓘ 六维是哪六维</div><span class="pill">学习态度</span><span class="pill">课堂纪律</span><span class="pill">协作贡献</span><span class="pill">文明礼仪</span><span class="pill">卫生劳动</span><span class="pill">集体荣誉</span>。所有点评都归到这六个维度，大屏雷达图和积分统计都基于它。</div>
+      <p>大屏的布局、主题和背景也能在屏幕上直接改：点右上 <code>✎ 编辑</code> 或设置抽屉，可调整卡片顺序、隐藏/显示模块、换主题配色和壁纸、调节留白与缩放。<strong>这些属于大屏本机布局设置</strong>；日常内容仍建议在后台改，保证多端一致。</p>
+    </section>
+
+    <!-- 喊话 -->
+    <section id="shout">
+      <div class="sec-h"><div class="ic">📢</div><h2>教室喊话</h2></div>
+      <p class="sec-sub">老师手机输入文字，大屏立刻弹窗并用真人音色朗读——最常用的功能。</p>
+      <h3>操作步骤</h3>
+      <div class="steps">
+        <div class="step">在后台左侧点「教室喊话」。</div>
+        <div class="step">在「喊话内容」里输入要讲的话（最多 120 字），也可以点下方的快捷短语快速填入。</div>
+        <div class="step">按需设置：显示时长、音色、语速、是否语音朗读。</div>
+        <div class="step">点「立即喊话到大屏」。约几秒后大屏弹出喊话横条并开始朗读，下方进度条走完自动收起。</div>
+      </div>
+      <h3>选项说明</h3>
+      <table>
+        <tr><th>选项</th><th>说明</th></tr>
+        <tr><td>显示时长</td><td>8 秒 / 12 秒 / 20 秒 / 30 秒 / 1 分钟 / <strong>2 分钟（默认）</strong>。长通知可选 2 分钟。</td></tr>
+        <tr><td>音色</td><td>微软在线真人音色（导航播报同款）：晓晓（温柔女声）、云扬（专业男声）、晓伊（甜美女声）、云希（阳光男声）、云健（沉稳男声）、晓北（东北话）。</td></tr>
+        <tr><td>语速</td><td>舒缓 / 标准（默认）/ 轻快。</td></tr>
+        <tr><td>语音朗读</td><td>默认勾选。取消勾选则只弹文字、不发声。</td></tr>
+      </table>
+      <div class="box warn"><div class="bt">⚠ 关于语音的三个要点</div>
+        <ul style="margin:6px 0 0">
+          <li>真人音色<strong>需要联网</strong>，教室电脑请保持网络畅通；网络异常时大屏会保持安静，不会改用难听的机械音。</li>
+          <li>大屏用 <strong>Edge 浏览器</strong>渲染时语音效果最佳（软件版已按此配置）。</li>
+          <li>浏览器为防自动播放，首次可能提示「点一下屏幕开启语音」。在<strong>大屏上点一下</strong>即可解锁；软件版已做自动解锁处理，通常无需手动。</li>
+        </ul>
+      </div>
+      <p>下方「最近喊话」会保留历史记录，方便回看发过什么。</p>
+    </section>
+
+    <!-- 点评 -->
+    <section id="review">
+      <div class="sec-h"><div class="ic">✎</div><h2>行为点评与积分</h2></div>
+      <p class="sec-sub">给学生加减分，一次可选多人、批量处理，结果自动上大屏。</p>
+      <h3>点评四步</h3>
+      <div class="steps">
+        <div class="step"><b>选学生。</b>可搜索姓名/学号，支持「全选 / 清空」。可一次选多名学生，给他们加同样的分。</div>
+        <div class="step"><b>选加还是减。</b>点「＋ 加分」或「－ 扣分」切换模式。</div>
+        <div class="step"><b>选行为和分值。</b>先点六维中的一个维度，再点具体行为细则（如「主动回答 +2」「课堂讲话 -2」）；分值也可在「班级管理 → 行为细则」里自定义。</div>
+        <div class="step">填补充说明（可选）→ 点「确认点评并同步大屏」。大屏积分、榜单、流水随即更新。</div>
+      </div>
+      <div class="box info"><div class="bt">ⓘ 常用行为细则示例（可自行增删）</div>
+        <table style="margin-bottom:0">
+          <tr><th>维度</th><th>加分示例</th><th>扣分示例</th></tr>
+          <tr><td>学习态度</td><td>主动回答 +2、认真笔记 +2、月考进步 +5</td><td>上课走神 -2、作业未交 -3</td></tr>
+          <tr><td>课堂纪律</td><td>纪律标兵 +3、安静自习 +2</td><td>迟到 -2、课堂讲话 -2</td></tr>
+          <tr><td>协作贡献</td><td>帮助同学 +3、小组贡献 +3</td><td>不参与讨论 -2</td></tr>
+          <tr><td>文明礼仪</td><td>主动问好 +2、文明用餐 +1</td><td>不文明用语 -3</td></tr>
+          <tr><td>卫生劳动</td><td>值日认真 +3、主动保洁 +2</td><td>卫生不合格 -2</td></tr>
+          <tr><td>集体荣誉</td><td>比赛获奖 +6、为班争光 +5</td><td>损害集体 -4</td></tr>
+        </table>
+      </div>
+      <p>下方「最近流水」显示每一次加减分记录，点「↶ 撤销上一条」可以撤回刚提交的点评，方便纠正误操作。</p>
+      <div class="box ok"><div class="bt">✓ 小组分怎么来</div>给属于某小组的学生点评时，学生个人分与该组积分会同步变化，大屏「小组积分榜」自动更新。先在「班级管理 → 小组」把学生分好组即可。</div>
+    </section>
+
+    <!-- 统计 -->
+    <section id="stats">
+      <div class="sec-h"><div class="ic">▤</div><h2>积分统计</h2></div>
+      <p class="sec-sub">数据全部来自日常点评流水，无需另外录入。顶部可切换三种视图：</p>
+      <ul>
+        <li><strong>个人总榜：</strong>全班学生按积分排名。</li>
+        <li><strong>小组总榜：</strong>各学习小组按积分排名。</li>
+        <li><strong>维度概览：</strong>六维成长画像，展示全班各维度平均分，与大屏雷达图是同一份数据。</li>
+      </ul>
+      <p>页面下方还有「近七日积分走势」，用于观察班级一段时间的变化趋势。期末评优、班会表扬时可以直接参考这里。</p>
+    </section>
+
+    <!-- 工具 -->
+    <section id="tools">
+      <div class="sec-h"><div class="ic">⚙</div><h2>教学工具</h2></div>
+      <p class="sec-sub">三个课堂常用小工具，都免费。</p>
+      <div class="grid2">
+        <div class="tile"><h4>随机点名</h4><p>从全班在册学生中随机抽取，点「开始点名」滚动、点「停止」定格。可点「把结果喊到大屏」直接通知全班。</p></div>
+        <div class="tile"><h4>课堂倒计时</h4><p>设定分钟数后开始，支持暂停/重置。勾选「结束时喊话提醒」，时间到会自动喊话提示。</p></div>
+        <div class="tile"><h4>考勤登记</h4><p>选好学生后标记为出勤 / 迟到 / 请假 / 缺勤，点「保存今日考勤」。顶部显示今日日期与汇总。</p></div>
+      </div>
+      <div class="box info"><div class="bt">ⓘ 小技巧</div>点名和考勤都依赖「班级管理 → 学生」里的名单。名单越完整，工具越好用。</div>
+    </section>
+
+    <!-- 班级管理 -->
+    <section id="manage">
+      <div class="sec-h"><div class="ic">▦</div><h2>班级管理</h2></div>
+      <p class="sec-sub">每天要改的内容基本都在这里。顶部有 9 个子标签，逐个来看。</p>
+
+      <h3>① 学生</h3>
+      <ul>
+        <li>单个添加：填「姓名」+「学号（可留空）」→ 点添加。</li>
+        <li>批量导入（推荐）：在文本框里<strong>每行一个姓名</strong>，或 <code>姓名|学号</code>，点「批量导入」。</li>
+      </ul>
+      <div class="format">张三
+李四|20260102
+王五</div>
+
+      <h3>② 小组</h3>
+      <p>先添加小组（如「启航小组」），再勾选学生加入。每位学生只归属一个小组。点小组名可展开看成员。</p>
+
+      <h3>③ 行为细则</h3>
+      <p>定义点评时可选的行为和分值。单个添加：选维度 + 填细则名 + 填分值（可为负）；也可批量导入：</p>
+      <div class="format">分类|细则|分值
+课堂表现|积极举手|2
+课堂表现|上课讲话|-2</div>
+      <div class="box warn"><div class="bt">⚠ 维度名称要写全</div>批量导入时「分类」需与六维一致：<code>学习态度 / 课堂纪律 / 协作贡献 / 文明礼仪 / 卫生劳动 / 集体荣誉</code>，否则可能匹配不到大屏的维度。</div>
+
+      <h3>④ 班级信息</h3>
+      <p>填班级名称、班级寄语、顶部一句话；设置事件倒计时的标题和日期；选择主题配色与背景壁纸。点「保存并同步到大屏」生效。系统提供十几种主题（极光青、暖橘暮、深海蓝、松林绿、星云紫等）和多种壁纸（渐变、校园、课堂、星点、粉霞、晚霞等）。</p>
+
+      <h3>⑤ 课程表</h3>
+      <div class="format">科目|开始|结束
+语文|08:00|08:40
+数学|08:50|09:30
+英语|09:50|10:30</div>
+
+      <h3>⑥ 作业</h3>
+      <p>今日作业（每行 <code>科目|标题|要求详情</code>）：</p>
+      <div class="format">语文|《出师表》课后练习|完成思考探究三题，朗读课文两遍
+数学|二次函数单元卷|限时40分钟，错题标注页码</div>
+      <p>作业完成进度「今日消消乐」（每行 <code>科目|任务|总人数|已完成|未完成名单</code>）：</p>
+      <div class="format">英语|Unit 8 单词默写|45|3|张三、李四、王五
+语文|《出师表》背诵|45|29|赵一鸣、钱六</div>
+
+      <h3>⑦ 值日</h3>
+      <div class="format">任务|负责同学（顿号分隔）
+扫地|林子安、周以宁
+擦黑板|沈知远
+倒垃圾|陈八</div>
+
+      <h3>⑧ 公告</h3>
+      <p>每行 <code>标题|内容|强调色（可留空）</code>：</p>
+      <div class="format">本周班务提醒|本周末准备语文课本和英语单词本|暖橘
+作业规范|数学用红笔订正后交|</div>
+
+      <h3>⑨ 榜样</h3>
+      <p>每行 <code>姓名|称号|积分|emoji</code>：</p>
+      <div class="format">陈八|学习标兵|132|🧑‍🎓
+李四|纪律之星|118|🌟</div>
+      <div class="box ok"><div class="bt">✓ 关于保存</div>以上文本类内容填好后都要点对应的「保存并同步到大屏」。保存成功后约 5 秒，大屏就会显示最新内容。</div>
+    </section>
+
+    <!-- 管理员 -->
+    <section id="access">
+      <div class="sec-h"><div class="ic">♙</div><h2>管理员专区</h2></div>
+      <p class="sec-sub">只有管理员能看到「班级与权限」菜单。普通班主任可跳过本章。</p>
+      <h3>新建班级</h3>
+      <p>填「班级代码」（2–32 位字母数字，如 <code>class2</code>）和班级名称（如「三年级二班」）→ 点「创建班级」。创建后系统会给出该班的大屏网址，把它发给该班班主任即可。</p>
+      <h3>班主任与授权</h3>
+      <p>老师注册后，在这里找到对应手机号，设置角色（管理员 / 班主任）、分配所属班级。分配后该老师刷新后台即可管理对应班级。</p>
+      <h3>已删除的班主任</h3>
+      <p>若删除了某位班主任的注册信息，他会出现在这里；需要恢复时在此操作，让其能重新注册。</p>
+      <div class="box danger"><div class="bt">⚠ 权限变更要谨慎</div>移除班主任会立即影响其管理权限。变更前请确认，避免误操作影响正常教学。</div>
+    </section>
+
+    <!-- 我的 -->
+    <section id="me">
+      <div class="sec-h"><div class="ic">☺</div><h2>我的账号</h2></div>
+      <p class="sec-sub">左侧点「我的」，可查看身份与角色，并进行以下操作：</p>
+      <ul>
+        <li><strong>修改密码：</strong>更新登录密码。</li>
+        <li><strong>查看班级大屏：</strong>快速打开本班大屏，核对内容是否正确显示。</li>
+        <li><strong>班级与权限：</strong>（仅管理员可见）</li>
+        <li><strong>退出登录：</strong>离开后台。公用电脑上建议用完退出，避免他人误操作。</li>
+      </ul>
+      <p>页面底部「关于本系统」说明：本系统为免费版，所有功能均可使用，<strong>不含任何收费项目、会员解锁或内购入口</strong>。</p>
+    </section>
+
+    <!-- FAQ -->
+    <section id="faq" class="faq">
+      <div class="sec-h"><div class="ic">?</div><h2>常见问题</h2></div>
+      <p class="sec-sub">遇到问题先看看这里，多数都能自己解决。</p>
+
+      <details><summary>后台显示「未连接」/ 大屏内容不更新？</summary><div class="ans">先确认教室电脑联网正常、大屏软件在运行。内容保存后约 5 秒刷新；如果一直「未连接」，检查网络或重启大屏软件（在桌面长按悬浮控制台调出大屏确认状态）。</div></details>
+
+      <details><summary>喊话没有声音？</summary><div class="ans">真人音色需要联网，请保持教室电脑联网。首次若提示「点一下屏幕开启语音」，在大屏上点一下即可。系统只使用在线真人音色，网络异常时会保持安静，不会换成机械音。另外确认后台「语音朗读」已勾选。</div></details>
+
+      <details><summary>收不到短信验证码？</summary><div class="ans">确认手机号填写正确、信号正常，稍等片刻再点「获取验证码」；注意查收短信拦截。仍不行可改用已设置的密码登录。</div></details>
+
+      <details><summary>注册后看不到班级内容 / 显示等待分配？</summary><div class="ans">普通班主任需要管理员在「班级与权限」里把你设为某班班主任。联系管理员分配后，刷新后台页面即可。若顶部有多个班级，记得在「班级」下拉框选中自己的班。</div></details>
+
+      <details><summary>大屏挡住了桌面图标怎么办？</summary><div class="ans">单击屏幕顶部中间的悬浮控制台进入壁纸态，即可看到并使用桌面图标；用完再长按约 0.6 秒让大屏全屏显示回来。</div></details>
+
+      <details><summary>学生名单 / 行为细则填了但大屏没变？</summary><div class="ans">文本类内容要点对应的「保存并同步到大屏」按钮才生效；学生、小组、行为细则改动后，可再做一次点评触发数据刷新，约 5 秒后大屏更新。</div></details>
+
+      <details><summary>点评加错分了？</summary><div class="ans">在「行为点评 → 最近流水」点「↶ 撤销上一条」即可撤回刚提交的点评。</div></details>
+
+      <details><summary>数据会丢失吗？收费吗？</summary><div class="ans">数据保存在云端，联网即可访问。本系统为免费版，无任何收费项目、会员或内购。重要名单建议自己在后台留存一份原始表格备份。</div></details>
+    </section>
+
+    <p class="foot">班务大屏 · 班主任使用手册　|　版本 20261124　|　如需帮助请联系系统管理员</p>
+  </main>
+</div>
+
+<div class="tools-fixed">
+  <button id="btnTop" title="返回顶部">↑</button>
+  <button id="btnPrint" title="打印 / 存为 PDF">⎙</button>
+</div>
+
+<script>
+  // 目录高亮
+  var links = Array.prototype.slice.call(document.querySelectorAll('#toc a'));
+  var ids = links.map(function(a){ return a.getAttribute('href').slice(1); });
+  function onScroll(){
+    var y = window.scrollY + 120, cur = ids[0];
+    ids.forEach(function(id){ var el = document.getElementById(id); if(el && el.offsetTop <= y) cur = id; });
+    links.forEach(function(a){ a.classList.toggle('active', a.getAttribute('href') === '#'+cur); });
+  }
+  window.addEventListener('scroll', onScroll, {passive:true}); onScroll();
+  links.forEach(function(a){ a.addEventListener('click', function(){ links.forEach(function(x){x.classList.remove('active');}); a.classList.add('active'); }); });
+  document.getElementById('btnTop').onclick = function(){ window.scrollTo({top:0, behavior:'smooth'}); };
+  document.getElementById('btnPrint').onclick = function(){ window.print(); };
+</script>
+</body>
+</html>
