@@ -34,8 +34,8 @@ window.DOWNLOAD_FALLBACK = [
     icon: '🖥️',
     url: 'files/class-screen-installer.exe',
     mirror: '',
-    description: '把班务大屏装到教室电脑或办公电脑：积分加减、行为点评、喊话、值日考勤与教学工具，投屏/壁纸态随时切换。',
-    note: '安装包约 196 KB。装好后按《班主任使用手册》完成初始化；首次使用需联网。Windows 如提示未知发布者，勾选“仍要运行”即可。',
+    description: '把班务大屏装到教室电脑或办公电脑：桌面「教师端管理」和「班务大屏壁纸」两个快捷方式都指向本站域名，积分加减、行为点评、喊话、值日考勤随时用。',
+    note: '安装包约 196 KB。安装时填班级代码（默认 main）。桌面快捷方式打开的是本站 www.smartlearner.top；若教师端登录后提示「来源未授权」，是云端白名单还没放行本站域名，此时数据只存本机，需管理员在云端补白名单。Windows 提示未知发布者时勾选“仍要运行”。',
     sort_order: 10,
     bundled: true
   },
