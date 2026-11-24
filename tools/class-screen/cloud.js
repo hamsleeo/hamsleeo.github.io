@@ -55,6 +55,59 @@
 
   function ready() { return !!cloud; }
 
+  /* ---------- 短信验证码设置密码（SDK 未暴露，走原生 fetch 直连代理）----------
+     云端 resetPassword 只支持邮件；但底层 /v1/verification 允许手机号 + usage=PASSWORD_RESET，
+     /v1/reset 接受 phone_number + verification_token + new_password。实测三条链路可用。 */
+  function authApiUrl(path) {
+    // cfg.endpoint 形如 https://host/?sharecode=X&p=/api
+    return cfg.endpoint + '/.cloud/auth' + path;
+  }
+  async function authApi(path, body) {
+    if (!cfg) throw new Error('云服务配置未加载');
+    var res = await global.fetch(authApiUrl(path), {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-wb-webapp-access-key': cfg.publishableKey
+      },
+      body: JSON.stringify(body)
+    });
+    var data = null;
+    try { data = await res.json(); } catch (e) { data = null; }
+    if (!res.ok || (data && (data.error || data.error_code))) {
+      var m = data && (data.error_description || data.message || data.error) || ('请求失败 HTTP ' + res.status);
+      throw new Error(m);
+    }
+    return data || {};
+  }
+  // 第1步：发送「重设密码」用途的短信验证码
+  async function sendPasswordResetCode(phone) {
+    if (!/^1\d{10}$/.test(phone)) throw new Error('请输入正确的 11 位手机号');
+    var data = await authApi('/v1/verification', {
+      phone_number: '+86 ' + phone, target: 'ANY', usage: 'PASSWORD_RESET'
+    });
+    if (!data.verification_id) throw new Error('验证码发送失败，请稍后重试');
+    return { verificationId: data.verification_id };
+  }
+  // 第2步：用验证码换取 verification_token
+  async function verifyPasswordResetCode(verificationId, code) {
+    if (!code) throw new Error('请输入验证码');
+    var data = await authApi('/v1/verification/verify', {
+      verification_id: verificationId, verification_code: code
+    });
+    if (!data.verification_token) throw new Error('验证码无效或已过期');
+    return { verificationToken: data.verification_token };
+  }
+  // 第3步：用 verification_token 设置新密码
+  async function confirmPasswordReset(phone, newPassword, verificationToken) {
+    if (!/^1\d{10}$/.test(phone)) throw new Error('请输入正确的 11 位手机号');
+    if (!newPassword || newPassword.length < 6) throw new Error('密码至少 6 位');
+    var data = await authApi('/v1/reset', {
+      phone_number: '+86 ' + phone, new_password: newPassword, verification_token: verificationToken
+    });
+    return data;
+  }
+
   function getBoardKey() { return boardKey || DEFAULT_BOARD_KEY; }
   function setBoardKey(key) {
     boardKey = (key || DEFAULT_BOARD_KEY);
@@ -343,6 +396,9 @@
     signInWithWorkBuddy: signInWithWorkBuddy,
     sendPhoneCode: sendPhoneCode, verifyPhoneCode: verifyPhoneCode,
     signInWithPassword: signInWithPassword, changePassword: changePassword,
+    sendPasswordResetCode: sendPasswordResetCode,
+    verifyPasswordResetCode: verifyPasswordResetCode,
+    confirmPasswordReset: confirmPasswordReset,
     signOut: signOut
   };
 })(window);

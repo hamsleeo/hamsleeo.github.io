@@ -7,6 +7,7 @@
   var allClasses = [];
   var pendingOtp = null;
   var codeOtp = null;
+  var resetOtp = null;
   var registerName = '';
   var selectedStudents = new Set();
   var selectedAtt = new Set();
@@ -574,6 +575,38 @@
   $('#toLogin').addEventListener('click', function () { switchAuth('login'); });
   $('#toCode').addEventListener('click', function () { switchAuth('code'); });
   $('#codeToLogin').addEventListener('click', function () { switchAuth('login'); });
+  // 短信验证码设置密码：兼容早期验证码创建、未设密码的账号
+  $('#toResetPwd').addEventListener('click', function () { switchAuth('resetpwd'); });
+  $('#resetToLogin').addEventListener('click', function () { switchAuth('login'); });
+  $('#sendResetCode').addEventListener('click', async function () {
+    msg(''); var phone = $('#resetPhone').value.trim();
+    if (!/^1\d{10}$/.test(phone)) { msg('请输入正确的 11 位手机号'); return; }
+    try {
+      var r = await CloudAPI.sendPasswordResetCode(phone);
+      resetOtp = { phone: phone, verificationId: r.verificationId };
+      msg('验证码已发送，请在 5 分钟内输入');
+    } catch (e) { msg(e.message); }
+  });
+  $('#resetSubmit').addEventListener('click', async function () {
+    msg('');
+    if (!resetOtp) { msg('请先获取验证码'); return; }
+    if (resetOtp.phone !== $('#resetPhone').value.trim()) { msg('手机号已修改，请重新获取验证码'); return; }
+    var code = $('#resetCode').value.trim();
+    if (!code) { msg('请输入验证码'); return; }
+    var pwd = $('#resetNewPwd').value;
+    if (!pwd || pwd.length < 6) { msg('密码至少 6 位'); return; }
+    if (pwd !== $('#resetNewPwd2').value) { msg('两次密码不一致'); return; }
+    try {
+      var resetPhone = resetOtp.phone;
+      var v = await CloudAPI.verifyPasswordResetCode(resetOtp.verificationId, code);
+      await CloudAPI.confirmPasswordReset(resetPhone, pwd, v.verificationToken);
+      resetOtp = null;
+      $('#resetNewPwd').value = ''; $('#resetNewPwd2').value = ''; $('#resetCode').value = '';
+      switchAuth('login');
+      $('#loginPhone').value = resetPhone;
+      msg('密码设置成功，请用密码登录');
+    } catch (e) { msg('设置失败：' + e.message); }
+  });
   // 验证码登录：兼容早期用验证码创建、未设置密码的历史账号
   $('#sendCodeCode').addEventListener('click', async function () {
     msg(''); var phone = $('#codePhone').value.trim();
