@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>班级管理 · 班务大屏</title>
-  <link rel="stylesheet" href="admin.css" />
+  <link rel="stylesheet" href="admin.css?v=20261124pend1" />
 </head>
 <body>
   <!-- 登录 -->
@@ -91,8 +91,8 @@
 
     <div class="notice" id="noAccess" hidden>
       <div class="notice-icon">◷</div>
-      <h2>等待管理员分配班级</h2>
-      <p>你的账号「<span id="myName">班主任</span>」已注册。请联系管理员在「系统」中把你设为某班班主任，分配后刷新本页即可管理班级。</p>
+      <h2>你的账号待分配</h2>
+      <p>你的账号「<span id="myName">班主任</span>」已注册，当前处于<b>待分配</b>状态，还没有任何班级权限。请联系管理员在后台「班级与权限」中勾选一个班级分配给你，分配后刷新本页即可管理班级与大屏。</p>
       <p style="margin-top:10px;font-size:13px">开发者排查：<a href="diag.html" style="color:#2563eb">打开云端数据诊断页 →</a>（只读，可查出当前账号角色与管理员名单）</p>
     </div>
     <div class="notice" id="blockedView" hidden>
@@ -459,6 +459,6 @@
   <script src="cloud-config.js?v=20261124w3"></script>
   <script src="cloud.js?v=20261124pwd1"></script>
   <script src="data.js?v=20261123k"></script>
-  <script src="admin.js?v=20261124pwd1"></script>
+  <script src="admin.js?v=20261124pend1"></script>
 </body>
 </html>

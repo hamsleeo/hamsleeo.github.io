@@ -116,18 +116,27 @@
 
       var users = await CloudAPI.listUsers();
       var adminCount = users.filter(function (u) { return u.role === 'admin'; }).length;
-      $('#userList').innerHTML = users.map(function (u) {
+      // 是否待分配：非管理员且没有任何班级授权
+      function isPending(u) { return u.role !== 'admin' && !(u.classes && u.classes.length); }
+      var pending = users.filter(isPending);
+      var assigned = users.filter(function (u) { return !isPending(u); });
+      var pendingCount = pending.length;
+
+      function renderUser(u) {
         var checks = allClasses.map(function (c) {
           var on = u.classes.indexOf(c.board_key) >= 0;
           return '<label class="class-check"><input type="checkbox" data-assign-user="' + esc(u.user_id) +
             '" data-assign-class="' + esc(c.board_key) + '"' + (on ? ' checked' : '') + ' />' + esc(c.class_name) + '</label>';
         }).join('');
         var isAdmin = u.role === 'admin';
-        return '<div class="user-row">' +
+        var pendingUser = isPending(u);
+        var roleCls = isAdmin ? ' admin' : (pendingUser ? ' pending' : '');
+        var roleTxt = isAdmin ? '管理员' : (pendingUser ? '待分配' : '班主任');
+        return '<div class="user-row' + (pendingUser ? ' pending-row' : '') + '">' +
           '<div class="user-top"><span class="user-name">' + esc(u.display_name) + '</span>' +
-          '<span class="user-role' + (isAdmin ? ' admin' : '') + '">' + (isAdmin ? '管理员' : '班主任') + '</span>' +
+          '<span class="user-role' + roleCls + '">' + roleTxt + '</span>' +
           '<span class="user-id">' + esc(u.user_id) + '</span></div>' +
-          '<div class="user-classes">' + (checks || '<span class="hint">暂无班级</span>') + '</div>' +
+          '<div class="user-classes">' + (checks || '<span class="hint">尚未分配班级，勾选下方班级即成为该班班主任</span>') + '</div>' +
           '<div class="user-actions">' + (isAdmin && adminCount <= 1
             ? '<button class="mini" disabled title="至少保留一名管理员">最后管理员不可降级</button>'
             : '<button class="mini" data-set-role="' + esc(u.user_id) +
@@ -135,7 +144,15 @@
           (isAdmin ? '' : '<button class="mini" style="color:#e05a5a" data-delete-user="' + esc(u.user_id) +
            '" data-delete-name="' + esc(u.display_name) + '">删除班主任</button>') + '</div>' +
           '</div>';
-      }).join('') || '<span class="hint">还没有注册用户。老师注册后会出现在这里。</span>';
+      }
+      var html = '';
+      if (pendingCount) {
+        html += '<div class="user-group-title pending-title">待分配（' + pendingCount + ' 人 · 已注册但未授权班级，登录后将等待分配）</div>';
+        html += pending.map(renderUser).join('');
+        html += '<div class="user-group-title">已授权班主任 / 管理员</div>';
+      }
+      html += assigned.map(renderUser).join('');
+      $('#userList').innerHTML = html || '<span class="hint">还没有注册用户。老师注册后会出现在这里。</span>';
 
       var blocked = await CloudAPI.listBlocked();
       $('#blockedList').innerHTML = blocked.map(function (b) {
@@ -536,7 +553,10 @@
     var name = access.displayName || '班主任';
     $('#avatarLetter').textContent = initials(name);
     $('#profileName').textContent = name;
-    var role = access.role === 'admin' ? '管理员 · 可管理所有班级' : (access.role === 'blocked' ? '账号已被移除' : '班主任 · ' + (availableClasses().map(function (c) { return c.class_name; }).join('、') || '未分配班级'));
+    var myClasses = availableClasses().map(function (c) { return c.class_name; }).join('、');
+    var role = access.role === 'admin' ? '管理员 · 可管理所有班级'
+      : (access.role === 'blocked' ? '账号已被移除'
+      : (myClasses ? '班主任 · ' + myClasses : '待分配 · 尚未获得班级权限'));
     $('#profileRole').textContent = role;
   }
 

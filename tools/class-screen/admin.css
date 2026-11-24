@@ -240,6 +240,10 @@ label input,label select { margin-top:6px; }
 .user-name { font-size:14px; font-weight:700; }
 .user-role { font-size:11px; padding:3px 8px; border-radius:12px; background:#eef2f8; color:var(--sub); }
 .user-role.admin { background:#fff2cf; color:#b8860b; }
+.user-role.pending { background:#ffe9e6; color:#d9603b; }
+.user-row.pending-row { background:#fffaf8; border-color:#f2d5cd; }
+.user-group-title { font-size:12px; font-weight:700; color:var(--sub); padding:2px 2px 0; margin-top:4px; }
+.user-group-title.pending-title { color:#d9603b; }
 .user-id { font-size:10px; color:var(--sub); margin-left:auto; word-break:break-all; }
 .user-classes { display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; }
 .class-check { display:flex; align-items:center; gap:5px; font-size:12px; color:var(--sub); border:1px solid var(--line); border-radius:8px; padding:5px 9px; cursor:pointer; }
