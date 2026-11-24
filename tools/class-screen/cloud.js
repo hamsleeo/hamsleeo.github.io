@@ -115,9 +115,11 @@
     return boardKey;
   }
   function boardUrl(key) {
+    // 大屏展示页是 tools/class-screen/index.html（不是站点根路径首页）。
+    // 从当前 admin.html 所在目录推导同级 index.html，保证指向真正的大屏页。
     var u = new URL(global.location.href);
-    u.pathname = '/';
-    u.search = '?sharecode=DIEDM4D3JD&class=' + encodeURIComponent(key || getBoardKey());
+    u.pathname = u.pathname.replace(/admin\.html$/i, 'index.html');
+    u.search = '?class=' + encodeURIComponent(key || getBoardKey());
     u.hash = '';
     return u.toString();
   }
