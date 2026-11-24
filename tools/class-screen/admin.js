@@ -171,17 +171,24 @@
   /* ---------- 表单序列化与回填 ---------- */
   function lines(k) { var el = $('[data-key="' + k + '"]'); return ((el && el.value) || '').split('\n').filter(function (x) { return x.trim(); }); }
   function serialize() {
-    var schedule = lines('schedule').map(function (l) { var p = l.split('|'); return { subject: p[0] || '自习', start: p[1] || '08:00', end: p[2] || '08:40' }; });
+    // 一周课表：day 1~7 分别读取；同时把当天课表同步到旧的 schedule 字段
+    var ws = {};
+    for (var d = 1; d <= 7; d++) {
+      ws[d] = lines('schedule' + d).map(function (l) { var p = l.split('|'); return { subject: p[0] || '自习', start: p[1] || '08:00', end: p[2] || '08:40' }; });
+    }
+    var todayKey = new Date().getDay() || 7;
     var homework = lines('homework').map(function (l) { var p = l.split('|'); return { subject: p[0] || '其他', title: p[1] || '作业', detail: p[2] || '' }; });
     var by = {}; homework.forEach(function (h) { (by[h.subject] = by[h.subject] || []).push({ title: h.title, detail: h.detail }); });
     state.className = ($('[data-key="className"]').value || '').trim() || '班级';
     state.slogan = $('[data-key="slogan"]').value || '';
     state.quote = $('[data-key="quote"]').value || '';
     state.countdown = { title: $('[data-key="countdownTitle"]').value || '班级活动', date: $('[data-key="countdownDate"]').value || state.countdown.date };
-    state.schedule = schedule;
+    state.weeklySchedule = ws;
+    state.schedule = (ws[todayKey] && ws[todayKey].length) ? ws[todayKey] : (ws[1] || []);
     state.homework = Object.keys(by).map(function (k) { return { subject: k, items: by[k] }; });
     state.duty = lines('duty').map(function (l) { var p = l.split('|'); return { task: p[0] || '值日', names: p[1] || '' }; });
     state.announcements = lines('notices').map(function (l, i) { var p = l.split('|'); return { title: p[0] || '公告', text: p[1] || '', accent: p[2] || ['#ffc97a', '#7fd6c0', '#9db8ff'][i % 3] }; });
+    state.leaves = lines('leaves').map(function (l) { var p = l.split('|'); return { name: p[0] || '', reason: p[1] || '', start: p[2] || '', end: p[3] || p[2] || '' }; });
     state.models = lines('models').map(function (l) { var p = l.split('|'); return { name: p[0] || '', role: p[1] || '优秀学生', score: +p[2] || 0, emoji: p[3] || '🌟' }; });
     state.fun = lines('fun').map(function (l) { var p = l.split('|'); return { subject: p[0] || '其他', title: p[1] || '任务', total: +p[2] || 45, done: +p[3] || 0, unfinished: p[4] || '' }; });
   }
@@ -189,11 +196,19 @@
   function fillForm() {
     set('className', state.className); set('slogan', state.slogan); set('quote', state.quote);
     set('countdownTitle', state.countdown.title); set('countdownDate', state.countdown.date);
-    set('schedule', state.schedule.map(function (c) { return [c.subject, c.start, c.end].join('|'); }).join('\n'));
+    // 一周课表回填：新结构用 weeklySchedule；旧数据把 schedule 填到周一~周五作初始参考
+    var ws = state.weeklySchedule;
+    if (!ws || !Object.keys(ws).length) {
+      ws = {}; for (var w = 1; w <= 5; w++) ws[w] = state.schedule || [];
+    }
+    for (var d = 1; d <= 7; d++) {
+      set('schedule' + d, (ws[d] || []).map(function (c) { return [c.subject, c.start, c.end].join('|'); }).join('\n'));
+    }
     var hw = []; state.homework.forEach(function (h) { h.items.forEach(function (it) { hw.push([h.subject, it.title, it.detail].join('|')); }); });
     set('homework', hw.join('\n'));
     set('duty', state.duty.map(function (d) { return [d.task, d.names].join('|'); }).join('\n'));
     set('notices', state.announcements.map(function (a) { return [a.title, a.text, a.accent].join('|'); }).join('\n'));
+    set('leaves', (state.leaves || []).map(function (l) { return [l.name, l.reason, l.start, l.end === l.start ? '' : l.end].join('|'); }).join('\n'));
     set('models', state.models.map(function (m) { return [m.name, m.role, m.score, m.emoji].join('|'); }).join('\n'));
     set('fun', state.fun.map(function (f) { return [f.subject, f.title, f.total, f.done, f.unfinished].join('|'); }).join('\n'));
     renderChips(); renderShout(); renderHome();
@@ -214,6 +229,17 @@
       var row = await CloudAPI.loadBoard();
       if (row && row.data && Object.keys(row.data).length) state = Object.assign(createDefaultState(), row.data);
       else state = CloudAPI.blankState();
+      // 老数据迁移：只有 schedule 时用其课表填充周一~周五，不沿用默认示范课表
+      if (!state.weeklySchedule || !Object.keys(state.weeklySchedule).length) {
+        var seed = (state.schedule && state.schedule.length) ? state.schedule : [], ws = {};
+        for (var wd = 1; wd <= 7; wd++) ws[wd] = wd <= 5 ? seed.slice() : [];
+        state.weeklySchedule = ws;
+      }
+      if (!state.leaves) state.leaves = [];
+      if (state.moduleOrder && state.moduleOrder.indexOf('leave') < 0) {
+        var li = state.moduleOrder.indexOf('attention');
+        state.moduleOrder.splice(li >= 0 ? li : state.moduleOrder.length, 0, 'leave');
+      }
       state.attendance = state.attendance || {};
       fillForm(); renderStudents(); renderDims(); renderLog(); renderManageLists(); renderStats(); renderAttendance();
       sync(row && row.updated_at ? '已同步 · ' + new Date(row.updated_at).toLocaleString('zh-CN', { hour12: false }) : '云端暂无数据，修改后点保存初始化');
@@ -582,6 +608,23 @@
   $('#manageTabs').addEventListener('click', function (e) {
     var b = e.target.closest('[data-mtab]'); if (!b) return;
     switchManageTab(b.dataset.mtab); renderManageLists();
+  });
+  // 一周课表：星期切换
+  var dayTabs = $('#dayTabs');
+  if (dayTabs) dayTabs.addEventListener('click', function (e) {
+    var b = e.target.closest('[data-day]'); if (!b) return;
+    $$('#dayTabs .day-tab').forEach(function (x) { x.classList.toggle('active', x === b); });
+    $$('.day-pane').forEach(function (p) { p.classList.toggle('active', p.dataset.daypane === b.dataset.day); });
+  });
+  // 把当前选中这天的课复制到周一~周五
+  var copyBtn = $('#copyScheduleToAll');
+  if (copyBtn) copyBtn.addEventListener('click', function () {
+    var active = $('#dayTabs .day-tab.active');
+    var day = active ? active.dataset.day : '1';
+    var src = $('[data-key="schedule' + day + '"]');
+    var text = src ? src.value : '';
+    for (var d = 1; d <= 5; d++) { var el = $('[data-key="schedule' + d + '"]'); if (el) el.value = text; }
+    toast('已把' + (active ? active.textContent : '周一') + '的课复制到周一至周五，记得点保存');
   });
   $('#statSeg').addEventListener('click', function (e) {
     var b = e.target.closest('[data-stat]'); if (!b) return;

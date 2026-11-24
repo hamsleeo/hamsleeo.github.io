@@ -1,44 +1,10 @@
--- 教师工具箱 · 软件管理云端建表 + 初始数据
--- 用法：在云服务控制台的 SQL 查询页整段执行一次。
--- 执行后，后台「管理后台 → 软件管理」即可看到并编辑下面两条；
--- 即使不执行，前台下载页也会通过 assets/downloads-data.js 的内置清单显示它们。
+-- 教师工具箱 · 下载页已下架（2026-11-24）
+-- 原「建表 + 初始数据」脚本已废弃：前台下载页整页删除，安装包改为本地按班级打包，
+-- 不再随站点发布。请勿再执行旧的插入语句，否则会把下载条目重新写回云端。
+--
+-- 下架 / 清空云端清单请改用：cloud-downloads-clear.sql
 
-create table if not exists public.downloads (
-  id text primary key,
-  name text not null,
-  version text,
-  size text,
-  platform text,
-  category text,
-  icon text,
-  url text not null,
-  mirror text,
-  description text,
-  note text,
-  sort_order int default 10,
-  enabled boolean default true,
-  created_at timestamptz default now(),
-  updated_at timestamptz default now()
-);
-
-alter table public.downloads enable row level security;
-create policy downloads_read on public.downloads for select using (true);
-create policy downloads_admin_write on public.downloads for all using (public.is_admin()) with check (public.is_admin());
-
-insert into public.downloads (id, name, version, size, platform, category, icon, url, mirror, description, note, sort_order, enabled)
-values
-  ('class-screen-installer', '安装班务大屏', 'Windows 安装包（ZIP）', '8.08 MB', 'Windows 10/11 64 位', '教学工具', '🖥️',
-   'files/class-screen-installer.zip', '',
-   '把班务大屏装到教室电脑或办公电脑：桌面「班务大屏（班级）」和「教师端管理」两个快捷方式都指向本站域名，积分加减、行为点评、喊话、值日考勤随时用。悬浮按钮可拖到任意位置，单击开合、双击看桌面、长按调出大屏。',
-   '下载的是 ZIP 压缩包，右键「全部解压缩」后双击里面的【安装班务大屏.exe】。用 ZIP 是为了避免浏览器拦截未签名的 exe。安装时填班级代码或直接填中文班级名（默认 main）。桌面快捷方式打开的是本站 www.smartlearner.top。Windows 若提示“已保护你的电脑”，点【更多信息】→【仍要运行】。',
-   10, true),
-  ('class-screen-manual', '班务大屏 · 班主任使用手册', 'HTML 版', '33 KB', '浏览器直接打开', '教学工具', '📖',
-   'files/class-screen-manual.html', '',
-   '从 5 分钟快速上手到积分统计、教室喊话、班级管理、管理员专区与常见问题，班主任照着做就能用好大屏。',
-   '点「在线阅读」直接看，也可下载保存后转发给同事；建议先读第 1 章再安装。',
-   11, true)
-on conflict (id) do update set
-  name = excluded.name, version = excluded.version, size = excluded.size,
-  platform = excluded.platform, category = excluded.category, icon = excluded.icon,
-  url = excluded.url, description = excluded.description, note = excluded.note,
-  sort_order = excluded.sort_order, enabled = excluded.enabled, updated_at = now();
+-- 如需彻底移除云端表（可选，一般不必执行）：
+-- drop policy if exists downloads_admin_write on public.downloads;
+-- drop policy if exists downloads_read on public.downloads;
+-- drop table if exists public.downloads;

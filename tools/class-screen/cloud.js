@@ -274,6 +274,9 @@
     var s = createDefaultState();
     s.students = []; s.groups = []; s.events = []; s.shoutHistory = [];
     s.models = []; s.fun = []; s.announcements = []; s.homework = []; s.schedule = []; s.duty = [];
+    // 新班级不继承演示课表与请假：整周清空、请假清空
+    if (s.weeklySchedule) for (var d = 1; d <= 7; d++) s.weeklySchedule[d] = [];
+    s.leaves = [];
     s.attendance = {}; s.weekNet = [0, 0, 0, 0, 0, 0, 0]; s.shout = null;
     return s;
   }

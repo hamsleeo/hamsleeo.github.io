@@ -14,3 +14,6 @@ Thumbs.db
 _selftest-*.html
 online-*.html
 tmp-edge-*/
+
+# 安装包只在本地按班级打包，不上传仓库 / Pages
+files/

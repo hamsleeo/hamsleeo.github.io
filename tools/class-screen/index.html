@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>班级班务大屏 · 915班</title>
-  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="styles.css?v=20261124ui2" />
 </head>
 <body>
   <div id="viewport">
@@ -73,7 +73,6 @@
               <div class="clock-time" id="clockTime">08:42:04</div>
               <div class="clock-date" id="clockDate">2026年11月23日 星期一</div>
             </div>
-            <a class="top-btn" href="admin.html" title="教师端管理界面：班主任登录后可编辑课程、作业与积分"><span>⚙</span> 教师端</a>
             <button class="top-btn" id="btnScore" title="快捷点评"><span>✦</span> 快捷点评</button>
             <button class="top-btn" id="btnEdit" title="布局编辑"><span>✎</span> 编辑</button>
             <button class="top-btn icon-only" id="btnFull" title="全屏显示">⛶</button>
@@ -118,10 +117,10 @@
             <div class="overview-body" id="overviewBody"></div>
           </section>
 
-          <!-- 六维雷达 -->
-          <section class="panel panel-radar" data-module="radar">
-            <div class="panel-head"><span class="head-icon">◇</span><h2>六维成长画像</h2><div class="head-actions"></div></div>
-            <div class="radar-body" id="radarBody"></div>
+          <!-- 今日消消乐 -->
+          <section class="panel panel-fun" data-module="fun">
+            <div class="panel-head"><span class="head-icon">✓</span><h2>今日消消乐</h2><span class="head-sub">作业完成进度</span><div class="head-actions"></div></div>
+            <div class="fun-list" id="funList"></div>
           </section>
 
           <!-- 小组排行 -->
@@ -136,16 +135,22 @@
             <div class="model-list" id="modelList"></div>
           </section>
 
-          <!-- 今日消消乐 -->
-          <section class="panel panel-fun" data-module="fun">
-            <div class="panel-head"><span class="head-icon">✓</span><h2>今日消消乐</h2><span class="head-sub">作业完成进度</span><div class="head-actions"></div></div>
-            <div class="fun-list" id="funList"></div>
+          <!-- 六维雷达 -->
+          <section class="panel panel-radar" data-module="radar">
+            <div class="panel-head"><span class="head-icon">◇</span><h2>六维成长画像</h2><div class="head-actions"></div></div>
+            <div class="radar-body" id="radarBody"></div>
           </section>
 
           <!-- 公告栏 -->
           <section class="panel panel-notice" data-module="notice">
             <div class="panel-head"><span class="head-icon">◈</span><h2>公告栏</h2><div class="head-actions"></div></div>
             <div class="notice-list" id="noticeList"></div>
+          </section>
+
+          <!-- 请假通报 -->
+          <section class="panel panel-leave" data-module="leave">
+            <div class="panel-head"><span class="head-icon">✚</span><h2>请假通报</h2><span class="head-sub">今日在假</span><div class="head-actions"></div></div>
+            <div class="leave-list" id="leaveList"></div>
           </section>
 
           <!-- 需关注与流水 -->
@@ -275,24 +280,11 @@
     </div>
   </div>
 
-  <script>
-    // OAuth 回调带 view=admin 时回到本目录的 admin.html（不是站点根后台）
-    (function () {
-      var u = new URL(location.href);
-      if (u.searchParams.get('view') === 'admin') {
-        u.searchParams.delete('view');
-        var dest = new URL('admin.html', location.href);
-        dest.search = u.search;
-        dest.hash = u.hash;
-        location.replace(dest.href);
-      }
-    })();
-  </script>
   <script src="vendor/workbuddy-cloud-sdk.js?v=20261123k"></script>
   <script src="cloud-config.js?v=20261124w3"></script>
-  <script src="cloud.js?v=20261124url1"></script>
-  <script src="data.js?v=20261123k"></script>
+  <script src="cloud.js?v=20261124ui2"></script>
+  <script src="data.js?v=20261124ui2"></script>
   <script src="voice.js?v=20261123k"></script>
-  <script src="app.js?v=20261123k"></script>
+  <script src="app.js?v=20261124ui2"></script>
 </body>
 </html>

@@ -82,6 +82,23 @@
   }
 
   function createDefaultState() {
+    // 默认课表：周一至周五同一套示范课表，周末留空；教师端可按周分别编辑
+    var baseSchedule = [
+      { subject: '语文', start: '08:00', end: '08:40' },
+      { subject: '数学', start: '08:50', end: '09:30' },
+      { subject: '英语', start: '09:50', end: '10:30' },
+      { subject: '物理', start: '10:40', end: '11:20' },
+      { subject: '化学', start: '14:00', end: '14:40' },
+      { subject: '历史', start: '14:50', end: '15:30' },
+      { subject: '体育与健康', start: '15:40', end: '16:20' },
+      // 第八节示范单双周：单周“道德与法治”，双周“心理健康”；写法 单周科目/双周科目
+      { subject: '道德与法治/心理健康', start: '16:40', end: '17:20' }
+    ];
+    // weeklySchedule 的键 1~7 表示周一~周日；大屏按当天星期自动取对应一天
+    var weeklySchedule = {};
+    for (var wd = 1; wd <= 7; wd++) {
+      weeklySchedule[wd] = wd <= 5 ? baseSchedule.map(function (c) { return { subject: c.subject, start: c.start, end: c.end }; }) : [];
+    }
     return {
       version: 1,
       className: '915班',
@@ -92,20 +109,13 @@
       margins: { left: 20, right: 0, top: 0, bottom: 0 },
       zoom: 100,
       noticeAccent: '暖橘',
-      moduleOrder: ['schedule','current','homework','duty','countdown','overview','radar','groups','models','fun','notice','attention'],
+      moduleOrder: ['schedule','current','homework','duty','countdown','overview','fun','groups','models','radar','notice','leave','attention'],
       hiddenModules: [],
       /* 手机喊话：老师从管理端发送，展示端检测 id 变化后弹层并朗读 */
       shout: { id: '', text: '', from: '班主任', duration: 12, speak: true, voice: 'xiaoxiao', voiceSpeed: 4, createdAt: '' },
-      schedule: [
-        { subject: '语文', start: '08:00', end: '08:40' },
-        { subject: '数学', start: '08:50', end: '09:30' },
-        { subject: '英语', start: '09:50', end: '10:30' },
-        { subject: '物理', start: '10:40', end: '11:20' },
-        { subject: '化学', start: '14:00', end: '14:40' },
-        { subject: '历史', start: '14:50', end: '15:30' },
-        { subject: '体育与健康', start: '15:40', end: '16:20' },
-        { subject: '道德与法治', start: '16:40', end: '17:20' }
-      ],
+      /* schedule 为兼容旧数据的“当日课表”；新数据以 weeklySchedule（周一~周日）为准 */
+      schedule: baseSchedule,
+      weeklySchedule: weeklySchedule,
       homework: [
         { subject: '语文', items: [
           { title: '第六单元《出师表》课后练习', detail: '完成课后「思考探究」第一、二、三题；朗读课文两遍；整理「陟罚臧否」等五个重点词语。' },
@@ -124,13 +134,21 @@
         { task: '扫地', names: '林子安、周以宁' },
         { task: '擦黑板', names: '沈知远' },
         { task: '倒垃圾', names: '陈八' },
-        { task: '整理讲台', names: '刘雨桐、黄子涵' }
+        { task: '整理讲台', names: '刘雨桐、黄子涵' },
+        { task: '拖地', names: '赵一鸣、孙悦' },
+        { task: '摆放桌椅', names: '李明轩' },
+        { task: '关窗断电', names: '王思远、周小满' }
       ],
       countdown: { title: '班级读书分享会', date: dateStr(10) },
       announcements: [
         { title: '本周班务提醒', text: '本周末准备语文课本和英语单词本。', accent: '#ffc97a' },
         { title: '作业规范', text: '数学作业请用红笔辅助线与证明过程，订正后交在作业本内。', accent: '#7fd6c0' },
         { title: '值日提醒', text: '放学请按值日安排整理桌椅、擦净黑板，离开教室前检查门窗。', accent: '#9db8ff' }
+      ],
+      /* 请假通报：教师端登记，大屏自动滚动展示当天及最近的请假 */
+      leaves: [
+        { name: '张三', reason: '感冒发热，家长接回休息', start: dateStr(0), end: dateStr(0) },
+        { name: '李四', reason: '牙科就诊，下午返校', start: dateStr(1), end: dateStr(1) }
       ],
       models: [
         { name: '陈八', role: '学习标兵', score: 132, emoji: '🧑‍🎓' },

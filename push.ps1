@@ -36,7 +36,7 @@ $env:GIT_TERMINAL_PROMPT = '0'
 $pushUrl = "https://hamsleeo:$tok@github.com/hamsleeo/hamsleeo.github.io.git"
 & $git -C $repo -c credential.helper= -c http.sslBackend=openssl -c http.version=HTTP/1.1 push $pushUrl main:main
 if ($LASTEXITCODE -eq 0) {
-  Write-Host '推送成功！约 1 分钟后访问 https://www.smartlearner.top/downloads.html' -ForegroundColor Green
+  Write-Host '推送成功！约 1 分钟后访问 https://www.smartlearner.top/index.html' -ForegroundColor Green
 } else {
   Write-Host "推送失败，退出码 $LASTEXITCODE。把上面的报错原文贴给阿简。" -ForegroundColor Red
 }

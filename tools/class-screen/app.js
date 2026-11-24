@@ -36,11 +36,36 @@
     });
     return base;
   }
+  // 老数据迁移：云端只有 schedule 没有 weeklySchedule 时，用它的课表填充周一~周五，
+  // 避免展示端误用默认示范课表；同时保证新字段存在。
+  function normalizeState(st) {
+    if (!st.weeklySchedule || !Object.keys(st.weeklySchedule).length) {
+      var seed = (st.schedule && st.schedule.length) ? st.schedule : [];
+      var ws = {};
+      for (var d = 1; d <= 7; d++) ws[d] = d <= 5 ? seed.slice() : [];
+      st.weeklySchedule = ws;
+    }
+    if (!st.leaves) st.leaves = [];
+    if (st.moduleOrder && st.moduleOrder.indexOf('leave') < 0) {
+      var i = st.moduleOrder.indexOf('attention');
+      st.moduleOrder.splice(i >= 0 ? i : st.moduleOrder.length, 0, 'leave');
+    }
+    // 布局调整：今日消消乐移到六维画像之前，并占用更宽的格子（span 3）。
+    // 老数据的 moduleOrder 仍是“画像在前、消消乐在后”，这里一次性交换，避免拖拽时跳回旧位置。
+    if (st.moduleOrder) {
+      var ri = st.moduleOrder.indexOf('radar'), fi = st.moduleOrder.indexOf('fun');
+      if (ri >= 0 && fi >= 0 && ri < fi) {
+        st.moduleOrder[ri] = 'fun';
+        st.moduleOrder[fi] = 'radar';
+      }
+    }
+    return st;
+  }
   function loadState() {
     try {
       var raw = localStorage.getItem(KEY);
       if (!raw) return createDefaultState();
-      return deepMerge(createDefaultState(), JSON.parse(raw));
+      return normalizeState(deepMerge(createDefaultState(), JSON.parse(raw)));
     } catch (e) { return createDefaultState(); }
   }
   function saveNow() {
@@ -131,18 +156,38 @@
   }
 
   /* ---------------- 班务模块 ---------------- */
+  // 返回"今天"的课表：优先按 weeklySchedule[周一~周日=1~7]，旧数据回退到 state.schedule
+  function todayKey() { var d = new Date().getDay(); return d === 0 ? 7 : d; }
+  function todayCourses() {
+    var ws = state.weeklySchedule;
+    if (ws && ws[todayKey()] && ws[todayKey()].length) return ws[todayKey()];
+    return state.schedule || [];
+  }
+  // 单双周：科目写成“单周/双周”（如 体育/班会），按周次奇偶取对应一门
+  function isOddWeek() { return weekNumber() % 2 === 1; }
+  function actualSubject(c) {
+    var s = String(c.subject || '');
+    if (s.indexOf('/') < 0) return s;
+    var parts = s.split('/');
+    return (isOddWeek() ? parts[0] : (parts[1] || parts[0])).trim();
+  }
+  function hasAlt(c) { return String(c.subject || '').indexOf('/') >= 0; }
+  function weekTag() { return isOddWeek() ? '单周' : '双周'; }
   function renderSchedule() {
     var cur = nowMin();
+    var courses = todayCourses();
     var idxNow = -1;
-    state.schedule.forEach(function (c, i) { if (cur >= toMin(c.start) && cur < toMin(c.end)) idxNow = i; });
-    $('#scheduleWeek').textContent = '第 ' + weekNumber() + ' 周';
-    $('#scheduleStrip').innerHTML = state.schedule.map(function (c, i) {
+    courses.forEach(function (c, i) { if (cur >= toMin(c.start) && cur < toMin(c.end)) idxNow = i; });
+    var dayName = ['周日','周一','周二','周三','周四','周五','周六'][new Date().getDay()];
+    $('#scheduleWeek').textContent = dayName + ' · 第 ' + weekNumber() + ' 周 · ' + weekTag();
+    $('#scheduleStrip').innerHTML = courses.length ? courses.map(function (c, i) {
       var cls = i === idxNow ? ' is-now' : (toMin(c.end) <= cur ? ' is-done' : '');
+      var altBadge = hasAlt(c) ? '<span class="sc-alt">' + weekTag() + '</span>' : '';
       return '<div class="schedule-card' + cls + '">' +
-        '<div class="sc-top"><span>第' + (i + 1) + '节</span>' + (i === idxNow ? '<span style="color:var(--accent)">● 进行中</span>' : '') + '</div>' +
-        '<div class="sc-subject">' + esc(c.subject) + '</div>' +
+        '<div class="sc-top"><span>第' + (i + 1) + '节</span>' + altBadge + (i === idxNow ? '<span style="color:var(--accent)">● 进行中</span>' : '') + '</div>' +
+        '<div class="sc-subject">' + esc(actualSubject(c)) + '</div>' +
         '<div class="sc-time">' + esc(c.start) + '–' + esc(c.end) + '</div></div>';
-    }).join('');
+    }).join('') : '<div class="schedule-empty">今天没有排课，好好安排自习吧 ✨</div>';
   }
   function weekNumber() {
     var d = new Date();
@@ -151,24 +196,25 @@
   }
   function renderCurrent() {
     var d = new Date(), cur = d.getHours() * 3600 + d.getMinutes() * 60 + d.getSeconds();
+    var courses = todayCourses();
     var found = -1, next = -1;
-    for (var i = 0; i < state.schedule.length; i++) {
-      var s = toMin(state.schedule[i].start) * 60, e = toMin(state.schedule[i].end) * 60;
+    for (var i = 0; i < courses.length; i++) {
+      var s = toMin(courses[i].start) * 60, e = toMin(courses[i].end) * 60;
       if (cur >= s && cur < e) { found = i; break; }
       if (cur < s && next < 0) next = i;
     }
     var html = '';
     if (found >= 0) {
-      var c = state.schedule[found];
+      var c = courses[found];
       var left = toMin(c.end) * 60 - cur;
       var total = (toMin(c.end) - toMin(c.start)) * 60;
-      html = '<div class="cur-state">正 在 上 课</div><div class="cur-subject">第' + (found + 1) + '节 · ' + esc(c.subject) + '</div>' +
+      html = '<div class="cur-state">正 在 上 课</div><div class="cur-subject">第' + (found + 1) + '节 · ' + esc(actualSubject(c)) + '</div>' +
         '<div class="cur-time">' + fmtDur(left) + '</div><div class="cur-hint">距下课 · ' + esc(c.end) + '</div>' +
         '<div class="cur-progress"><i style="width:' + Math.max(0, Math.min(100, (1 - left / total) * 100)) + '%"></i></div>';
     } else if (next >= 0) {
-      var n = state.schedule[next];
+      var n = courses[next];
       var left2 = toMin(n.start) * 60 - cur;
-      html = '<div class="cur-state">课 间</div><div class="cur-subject">下一节 · ' + esc(n.subject) + '</div>' +
+      html = '<div class="cur-state">课 间</div><div class="cur-subject">下一节 · ' + esc(actualSubject(n)) + '</div>' +
         '<div class="cur-time">' + fmtDur(left2) + '</div><div class="cur-hint">距上课 · ' + esc(n.start) + '</div>' +
         '<div class="cur-progress"><i style="width:' + Math.max(4, Math.min(96, 100 - left2 / 6)) + '%"></i></div>';
     } else {
@@ -176,6 +222,19 @@
         '<div class="cur-time" style="font-size:42px">辛苦了</div><div class="cur-hint">明天见 · 好好休息</div>';
     }
     $('#currentBody').innerHTML = html;
+  }
+  // 请假通报：按日期显示今天及最近的请假，教师端登记后大屏自动同步
+  function renderLeave() {
+    var el = $('#leaveList');
+    if (!el) return;
+    var leaves = (state.leaves || []).slice();
+    leaves.sort(function (a, b) { return String(a.start || '') < String(b.start || '') ? 1 : -1; });
+    el.innerHTML = leaves.length ? leaves.slice(0, 6).map(function (l) {
+      var range = l.start && l.end && l.start !== l.end ? (l.start.slice(5) + ' 至 ' + l.end.slice(5)) : (l.start ? l.start.slice(5) : '今天');
+      return '<div class="leave-item"><div class="leave-name">' + esc(l.name) + '</div>' +
+        '<div class="leave-reason">' + esc(l.reason) + '</div>' +
+        '<div class="leave-date">' + esc(range) + '</div></div>';
+    }).join('') : '<div class="leave-empty">今日暂无请假 · 全员到齐 🎉</div>';
   }
   function renderHomework() {
     $('#hwTabs').innerHTML = state.homework.map(function (h, i) {
@@ -314,7 +373,7 @@
 
   function renderAll() {
     renderShell(); renderSchedule(); renderCurrent(); renderHomework(); renderDuty(); renderCountdown();
-    renderOverview(); renderRadar(); renderGroups(); renderModels(); renderFun(); renderNotice(); renderAttention();
+    renderOverview(); renderRadar(); renderGroups(); renderModels(); renderFun(); renderNotice(); renderLeave(); renderAttention();
     applyTheme(); applyLayout();
     applyModuleVisibility();
     renderToggles(); renderThemeChoices(); renderStudentPicker(); renderDimTabs(); renderBehaviors(); renderRecentLog();
@@ -341,7 +400,7 @@
     var labels = {
       schedule: '今日课程表', current: '当前课程', homework: '今日作业', duty: '今日值日', countdown: '事件倒计时',
       overview: '积分总览', radar: '六维画像', groups: '小组积分榜', models: '今日榜样', fun: '今日消消乐',
-      notice: '公告栏', attention: '关注与流水'
+      notice: '公告栏', leave: '请假通报', attention: '关注与流水'
     };
     $('#moduleToggles').innerHTML = state.moduleOrder.map(function (m) {
       return '<label class="module-toggle"><input type="checkbox" data-module-toggle="' + m + '"' +
@@ -443,13 +502,32 @@
   /* ---------------- 模块配置弹窗 ---------------- */
   var MODAL_CONFIG = {
     schedule: {
-      title: '配置今日课程表', hint: '每行一节课：科目|开始时间|结束时间（24 小时制）',
-      get: function () { return state.schedule.map(function (c) { return [c.subject, c.start, c.end].join('|'); }).join('\n'); },
+      title: '配置整周课程表', hint: '每行一天，格式：星期|科目=开始-结束,科目=开始-结束 …（24小时制）。例：周一|语文=08:00-08:40,数学=08:50-09:30。留空的那天表示无课。',
+      get: function () {
+        var names = ['周一','周二','周三','周四','周五','周六','周日'];
+        var ws = state.weeklySchedule || {};
+        return names.map(function (n, i) {
+          var arr = ws[i + 1] || [];
+          return n + '|' + arr.map(function (c) { return c.subject + '=' + c.start + '-' + c.end; }).join(',');
+        }).join('\n');
+      },
       set: function (text) {
-        var arr = text.split('\n').filter(Boolean).map(function (l) {
-          var p = l.split('|'); return { subject: p[0] || '自习', start: p[1] || '08:00', end: p[2] || '08:40' };
+        var names = ['周一','周二','周三','周四','周五','周六','周日'];
+        var ws = {};
+        text.split('\n').forEach(function (line) {
+          if (!line.trim() || line.indexOf('|') < 0) return;
+          var p = line.split('|'), day = names.indexOf((p[0] || '').trim()) + 1;
+          if (day < 1) return;
+          ws[day] = (p[1] || '').split(',').map(function (item) {
+            if (!item.trim()) return null;
+            var cp = item.split('='), tp = (cp[1] || '').split('-');
+            return { subject: (cp[0] || '自习').trim(), start: (tp[0] || '08:00').trim(), end: (tp[1] || '08:40').trim() };
+          }).filter(Boolean);
         });
-        if (arr.length) state.schedule = arr;
+        for (var d = 1; d <= 7; d++) if (!ws[d]) ws[d] = [];
+        state.weeklySchedule = ws;
+        // 同步一份到旧的 schedule，保证老版本大屏/其他入口也能显示当天课
+        state.schedule = (ws[todayKey()] && ws[todayKey()].length) ? ws[todayKey()] : (ws[1] || []);
       }
     },
     homework: {
@@ -681,7 +759,7 @@
 
   $('#btnAddModule').addEventListener('click', function () {
     var root = $('#modalRoot');
-    var labels = { schedule:'今日课程表', current:'当前课程', homework:'今日作业', duty:'今日值日', countdown:'事件倒计时', overview:'积分总览', radar:'六维画像', groups:'小组积分榜', models:'今日榜样', fun:'今日消消乐', notice:'公告栏', attention:'关注与流水' };
+    var labels = { schedule:'今日课程表', current:'当前课程', homework:'今日作业', duty:'今日值日', countdown:'事件倒计时', overview:'积分总览', radar:'六维画像', groups:'小组积分榜', models:'今日榜样', fun:'今日消消乐', notice:'公告栏', leave:'请假通报', attention:'关注与流水' };
     root.innerHTML = '<div class="modal"><h3>添加 / 显示模块</h3><p class="hint">勾选要显示在大屏上的模块。</p>' +
       state.moduleOrder.map(function (m) {
         return '<label class="module-toggle" style="display:inline-flex;width:48%;margin:3px"><input type="checkbox" data-add-module="' + m + '"' + (state.hiddenModules.indexOf(m) < 0 ? ' checked' : '') + '><span>' + labels[m] + '</span></label>';
@@ -868,12 +946,25 @@
     clearInterval(shoutTimers.tick);
     var ov = $('#shoutOverlay');
     if (ov) ov.classList.remove('show');
+    // 同步给桌面悬浮控制台：它读取此属性弹出真正置顶的喊话蒙版
+    try { if (document.body) document.body.removeAttribute('data-live-shout'); } catch (e) {}
     stopSpeech();
   }
   function showShout(s) {
     var text = (s && s.text || '').trim();
     if (!text) return;
     var duration = Math.max(3, +s.duration || 12);
+    // 暴露实时喊话状态给桌面端 CDP 读取。网页蒙版在浏览器窗口内无法置顶于
+    // 其他软件之上；桌面控制台读到这里后弹 TopMost 蒙版，保证喊话总被看到。
+    try {
+      if (document.body) document.body.setAttribute('data-live-shout', JSON.stringify({
+        id: s.id || (text + '|' + Date.now()),
+        text: text,
+        from: s.from || '班主任',
+        duration: duration,
+        startedAt: Date.now()
+      }));
+    } catch (e) {}
     var overlay = $('#shoutOverlay');
     var textEl = $('#shoutTextDisplay');
     var fromEl = $('#shoutFrom');
@@ -941,7 +1032,7 @@
     try {
       var row = await CloudAPI.loadBoard();
       if (row && row.data && Object.keys(row.data).length) {
-        state = deepMerge(createDefaultState(), row.data);
+        state = normalizeState(deepMerge(createDefaultState(), row.data));
         syncSettingsInputs();
         renderAll();
         setSync('云端已同步 · ' + (row.updated_at ? new Date(row.updated_at).toLocaleString('zh-CN', { hour12: false }) : ''));

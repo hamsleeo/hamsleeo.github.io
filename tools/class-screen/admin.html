@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>班级管理 · 班务大屏</title>
-  <link rel="stylesheet" href="admin.css?v=20261124lock1" />
+  <link rel="stylesheet" href="admin.css?v=20261124week1" />
 </head>
 <body>
   <!-- 登录 -->
@@ -146,7 +146,8 @@
               <button class="quick" data-goto="tools" data-tool="attendance"><i class="qi qi-att">✓</i><span>考勤登记</span></button>
               <button class="quick" data-goto="manage" data-mtab="homework"><i class="qi qi-hw">▤</i><span>作业登记</span></button>
               <button class="quick" data-goto="manage" data-mtab="duty"><i class="qi qi-duty">⌘</i><span>值日安排</span></button>
-              <button class="quick" data-goto="manage" data-mtab="schedule"><i class="qi qi-sch">▦</i><span>课程表</span></button>
+              <button class="quick" data-goto="manage" data-mtab="schedule"><i class="qi qi-sch">▦</i><span>一周课表</span></button>
+              <button class="quick" data-goto="manage" data-mtab="leave"><i class="qi qi-duty">✚</i><span>请假登记</span></button>
             </div>
           </div>
 
@@ -304,6 +305,7 @@
             <button data-mtab="homework">作业</button>
             <button data-mtab="duty">值日</button>
             <button data-mtab="notice">公告</button>
+            <button data-mtab="leave">请假</button>
             <button data-mtab="models">榜样</button>
           </div>
 
@@ -368,8 +370,29 @@
 
           <div class="subpane" data-spane="schedule">
             <div class="card">
-              <h2>今日课程表 <small>每行：科目|开始|结束</small></h2>
-              <textarea data-key="schedule" rows="12"></textarea>
+              <h2>一周课程表 <small>按周编辑，大屏每天自动显示当天的课；每行：科目|开始|结束</small></h2>
+              <p class="hint">选择星期分别编辑每天的课务，保存后大屏按当天星期自动切换、每周循环。<b>单双周课程</b>：像第八节这样隔周不同的课，科目写成 <code>单周科目/双周科目</code>（如 <code>体育/班会</code>），大屏会按周次奇偶自动选课，标题会显示「单周/双周」。</p>
+              <div class="day-tabs" id="dayTabs">
+                <button type="button" class="day-tab active" data-day="1">周一</button>
+                <button type="button" class="day-tab" data-day="2">周二</button>
+                <button type="button" class="day-tab" data-day="3">周三</button>
+                <button type="button" class="day-tab" data-day="4">周四</button>
+                <button type="button" class="day-tab" data-day="5">周五</button>
+                <button type="button" class="day-tab" data-day="6">周六</button>
+                <button type="button" class="day-tab" data-day="7">周日</button>
+              </div>
+              <div class="day-panes">
+                <div class="day-pane active" data-daypane="1"><textarea data-key="schedule1" rows="12" placeholder="每行一节课：科目|开始|结束&#10;如：语文|08:00|08:40&#10;单双周：体育/班会|16:40|17:20&#10;留空表示当天无课"></textarea></div>
+                <div class="day-pane" data-daypane="2"><textarea data-key="schedule2" rows="12" placeholder="每行一节课：科目|开始|结束"></textarea></div>
+                <div class="day-pane" data-daypane="3"><textarea data-key="schedule3" rows="12" placeholder="每行一节课：科目|开始|结束"></textarea></div>
+                <div class="day-pane" data-daypane="4"><textarea data-key="schedule4" rows="12" placeholder="每行一节课：科目|开始|结束"></textarea></div>
+                <div class="day-pane" data-daypane="5"><textarea data-key="schedule5" rows="12" placeholder="每行一节课：科目|开始|结束"></textarea></div>
+                <div class="day-pane" data-daypane="6"><textarea data-key="schedule6" rows="12" placeholder="周末一般无课，留空即可"></textarea></div>
+                <div class="day-pane" data-daypane="7"><textarea data-key="schedule7" rows="12" placeholder="周末一般无课，留空即可"></textarea></div>
+              </div>
+              <div class="inline-form" style="margin-top:8px">
+                <button type="button" class="ghost" id="copyScheduleToAll">把当前这天复制到所有工作日</button>
+              </div>
               <button class="primary save" data-save>保存并同步到大屏</button>
             </div>
           </div>
@@ -396,6 +419,15 @@
             <div class="card">
               <h2>班级公告 <small>每行：标题|内容|强调色（可留空）</small></h2>
               <textarea data-key="notices" rows="10"></textarea>
+              <button class="primary save" data-save>保存并同步到大屏</button>
+            </div>
+          </div>
+
+          <div class="subpane" data-spane="leave">
+            <div class="card">
+              <h2>请假通报 <small>每行：姓名|事由|开始日期|结束日期</small></h2>
+              <p class="hint">登记的请假会自动显示在大屏「请假通报」栏。日期格式 2026-11-24；只有一天可只填开始日期。学生返校后删除对应行即可。</p>
+              <textarea data-key="leaves" rows="10" placeholder="张三|感冒发热，家长接回休息|2026-11-24|2026-11-24&#10;李四|牙科就诊，下午返校|2026-11-25"></textarea>
               <button class="primary save" data-save>保存并同步到大屏</button>
             </div>
           </div>
@@ -460,6 +492,6 @@
   <script src="cloud-config.js?v=20261124w3"></script>
   <script src="cloud.js?v=20261124url1"></script>
   <script src="data.js?v=20261123k"></script>
-  <script src="admin.js?v=20261124lock1"></script>
+  <script src="admin.js?v=20261124week1"></script>
 </body>
 </html>
