@@ -296,14 +296,18 @@
     seaglass:       { name: '海玻璃', light: true, a: '#f0fbfa', b: '#d8f1ee', c: '#bce3de', accent: '#137a70', accent2: '#a86a2c' },
     snowfield:      { name: '雪原白', light: true, a: '#f7f9fb', b: '#e9eef3', c: '#d9e2ea', accent: '#3c556e', accent2: '#8a6632' },
     buttercream:    { name: '奶油香', light: true, a: '#fffcf0', b: '#fbf3d6', c: '#f2e6b8', accent: '#8a7018', accent2: '#396e5a' },
-    /* ===== 深色主题——仅保留在用的 4 个 + 3 个经典，去掉重复深色调 ===== */
+    /* ===== 暖色调主题（浅色暖底 + 暖色强调）——营造温暖教室氛围 ===== */
+    apricot:        { name: '杏子暖', light: true, a: '#fff6ec', b: '#ffe9d2', c: '#f8d4b4', accent: '#b05a24', accent2: '#8a3f2a' },
+    coral:          { name: '珊瑚暖', light: true, a: '#fff3ee', b: '#ffe0d4', c: '#f9c9b7', accent: '#c05233', accent2: '#9a6a1e' },
+    honey:          { name: '蜜糖金', light: true, a: '#fffbef', b: '#fcf1d4', c: '#f4e2b0', accent: '#a06a12', accent2: '#a8482a' },
+    rosegold:       { name: '玫瑰金', light: true, a: '#fff5f1', b: '#fbe3d9', c: '#f4cabe', accent: '#b2513e', accent2: '#a07a1e' },
+    terracotta:     { name: '陶土暖', light: true, a: '#fdf5ef', b: '#f4e4d7', c: '#e8cdb9', accent: '#98553a', accent2: '#7a4a2e' },
+    warmyellow:     { name: '暖阳黄', light: true, a: '#fffdf2', b: '#fff5d6', c: '#f9e8ab', accent: '#967016', accent2: '#b5562b' },
+    /* ===== 深色主题——仅保留各班在用的 4 个，去掉重复深色调 ===== */
     aurora:   { name: '极光青', a: '#16243d', b: '#1d3a48', c: '#2e5b58', accent: '#7fd6c0', accent2: '#ffc97a' },
     gold:     { name: '鎏金韵', a: '#241d10', b: '#3d2f18', c: '#665024', accent: '#e8c979', accent2: '#ff9f6b' },
     rose:     { name: '玫瑰红', a: '#2a1620', b: '#4a2033', c: '#7a3048', accent: '#ff9ec0', accent2: '#ffd08a' },
-    mint:     { name: '薄荷绿', a: '#112421', b: '#1a3a33', c: '#2c5f50', accent: '#8fe3c6', accent2: '#d4f0a8' },
-    ocean:    { name: '深海蓝', a: '#111d3a', b: '#173355', c: '#205878', accent: '#7fc7ff', accent2: '#a8e6ff' },
-    forest:   { name: '松林绿', a: '#142a25', b: '#1e4034', c: '#376548', accent: '#9be0a6', accent2: '#e7dc94' },
-    ink:      { name: '墨玉黑', a: '#101218', b: '#1b1f27', c: '#2c313d', accent: '#d7deea', accent2: '#f2c98a' }
+    mint:     { name: '薄荷绿', a: '#112421', b: '#1a3a33', c: '#2c5f50', accent: '#8fe3c6', accent2: '#d4f0a8' }
   };
   global.WALLPAPERS = {
     /* 浅色/中性背景——排在前面，与浅色主题搭配更柔和 */
@@ -315,8 +319,9 @@
     blush:     { name: '粉霞', css: 'linear-gradient(125deg, rgba(255,190,210,.7) 0%, rgba(255,220,190,.45) 55%, transparent 100%)' },
     cloudwhite:{ name: '云白', css: 'radial-gradient(900px 600px at 20% 15%, rgba(255,255,255,.9) 0%, transparent 70%), radial-gradient(800px 500px at 85% 85%, rgba(235,245,255,.75) 0%, transparent 65%)' },
     sunrise:   { name: '晨曦', css: 'linear-gradient(130deg, rgba(255,235,190,.75) 0%, rgba(255,205,170,.45) 55%, transparent 100%)' },
+    peachglow: { name: '蜜桃光', css: 'radial-gradient(900px 600px at 18% 18%, rgba(255,215,190,.85) 0%, transparent 65%), radial-gradient(800px 500px at 88% 82%, rgba(255,230,180,.6) 0%, transparent 65%)' },
+    ambermist: { name: '琥珀雾', css: 'linear-gradient(120deg, rgba(255,205,130,.7) 0%, rgba(255,170,120,.5) 55%, transparent 100%)' },
     /* 偏艳色罩——保留但放到后面 */
-    seafoam:   { name: '碧波', css: 'linear-gradient(130deg, rgba(110,235,210,.75) 0%, rgba(90,170,255,.6) 60%, transparent 100%)' },
     golden:    { name: '鎏金', css: 'linear-gradient(125deg, rgba(255,215,120,.9) 0%, rgba(255,150,80,.6) 60%, transparent 100%)' },
     sunset:    { name: '晚霞', css: 'linear-gradient(130deg, rgba(255,140,90,.9) 0%, rgba(200,90,170,.7) 55%, transparent 100%)' }
   };

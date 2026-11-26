@@ -725,7 +725,7 @@
   /* ---------- 可视化布局：教师端拖板块 → 草稿存本机 → 顶版本号写云端 ---------- */
   var LAYOUT_DRAFT_KEY = 'classScreenLayoutLocal_v1';
   function layoutStatus(text) { var el = $('#layoutStatus'); if (el) el.textContent = text || ''; }
-  function layoutFrameUrl() { return CloudAPI.boardUrl(CloudAPI.getBoardKey()) + '&mode=layout&v=20261126theme1'; }
+  function layoutFrameUrl() { return CloudAPI.boardUrl(CloudAPI.getBoardKey()) + '&mode=layout&v=20261126theme2'; }
   function loadLayoutFrame() {
     var f = $('#layoutFrame'); if (!f) return;
     if (!f.getAttribute('src')) {
