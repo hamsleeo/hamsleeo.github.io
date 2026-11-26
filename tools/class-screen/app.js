@@ -126,6 +126,9 @@
     screen.style.setProperty('--accent-2', t.accent2);
     screen.style.setProperty('--glow-a', t.accent);
     screen.style.setProperty('--glow-b', t.c);
+    /* 浅色主题标记：CSS 据此把文字/面板/深色底切换到浅色调 */
+    if (t.light) screen.setAttribute('data-light', '1');
+    else screen.removeAttribute('data-light');
     var w = WALLPAPERS[state.wallpaper] || WALLPAPERS.gradient;
     screen.style.setProperty('--wall-image', w.css);
   }

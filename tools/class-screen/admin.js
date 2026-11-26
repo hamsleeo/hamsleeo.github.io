@@ -478,7 +478,9 @@
   /* ---------- 主题 ---------- */
   function renderChips() {
     $('#themeChips').innerHTML = Object.keys(THEMES).map(function (k) {
-      return '<button class="chip' + (state.theme === k ? ' active' : '') + '" data-theme="' + k + '">' + THEMES[k].name + '</button>';
+      var t = THEMES[k];
+      var dot = '<i class="chip-dot" style="background:linear-gradient(135deg,' + t.a + ',' + t.c + ')"></i>';
+      return '<button class="chip' + (state.theme === k ? ' active' : '') + '" data-theme="' + k + '">' + dot + t.name + (t.light ? ' ·浅' : '') + '</button>';
     }).join('');
     $('#wallChips').innerHTML = Object.keys(WALLPAPERS).map(function (k) {
       return '<button class="chip' + (state.wallpaper === k ? ' active' : '') + '" data-wall="' + k + '">' + WALLPAPERS[k].name + '</button>';

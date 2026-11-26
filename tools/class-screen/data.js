@@ -212,7 +212,13 @@
     sky:      { name: '晴空蓝', a: '#12253a', b: '#1c3f5c', c: '#2e6a8e', accent: '#8fd4ff', accent2: '#ffe08a' },
     rose:     { name: '玫瑰红', a: '#2a1620', b: '#4a2033', c: '#7a3048', accent: '#ff9ec0', accent2: '#ffd08a' },
     gold:     { name: '鎏金韵', a: '#241d10', b: '#3d2f18', c: '#665024', accent: '#e8c979', accent2: '#ff9f6b' },
-    lavender: { name: '薰衣草', a: '#1e1b33', b: '#332c55', c: '#54497e', accent: '#bfa9ff', accent2: '#ffc9e8' }
+    lavender: { name: '薰衣草', a: '#1e1b33', b: '#332c55', c: '#54497e', accent: '#bfa9ff', accent2: '#ffc9e8' },
+    /* 浅色主题：light 标记为 true，大屏会自动切换到深色文字 + 浅色面板 */
+    cloudlight:     { name: '云舒白', light: true, a: '#eef3fa', b: '#dde8f5', c: '#cbdcef', accent: '#2f6fb0', accent2: '#c4762c' },
+    creamlight:     { name: '奶油黄', light: true, a: '#fff9ee', b: '#f7ecd7', c: '#efdcb9', accent: '#a86a1e', accent2: '#3e7a63' },
+    sakuralight:    { name: '浅樱粉', light: true, a: '#fff2f6', b: '#fae1ea', c: '#f2c9d9', accent: '#b03a63', accent2: '#7a56a8' },
+    mintlight:      { name: '薄荷白', light: true, a: '#effaf5', b: '#dbf0e6', c: '#c2e5d4', accent: '#1c8062', accent2: '#9a7410' },
+    lavenderlight:  { name: '浅薰紫', light: true, a: '#f4f1ff', b: '#e7e0fa', c: '#d6caf1', accent: '#6345aa', accent2: '#a8513a' }
   };
   global.WALLPAPERS = {
     gradient:  { name: '渐变', css: 'none' },

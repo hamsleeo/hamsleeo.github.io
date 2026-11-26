@@ -91,7 +91,8 @@ label input,label select { margin-top:6px; }
 .field-label.step { margin-top:22px; }
 .counter,.sel-tip { font-size:11px; color:var(--sub); font-weight:400; }
 .chips { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:12px; }
-.chip { border:1px solid var(--line); background:#fff; color:var(--ink); border-radius:20px; padding:7px 13px; font-size:12px; }
+.chip { border:1px solid var(--line); background:#fff; color:var(--ink); border-radius:20px; padding:7px 13px; font-size:12px; display:inline-flex; align-items:center; gap:6px; }
+.chip-dot { display:inline-block; width:13px; height:13px; border-radius:50%; border:1px solid rgba(0,0,0,.12); flex:none; }
 .chip.active { border-color:var(--accent); background:var(--accent-soft); color:var(--accent); font-weight:700; }
 .inline-form { display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-bottom:12px; }
 .inline-form input,.inline-form select { flex:1; min-width:130px; margin:0; }

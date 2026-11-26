@@ -604,3 +604,100 @@ body.mode-display .head-action-btn { display: none !important; }
 .notice-list { padding-top: 5px; padding-bottom: 4px; gap: 4px; }
 .notice-item { padding-top: 3px; padding-bottom: 3px; }
 .notice-more { font-size: 12px; }
+
+/* ============================================================
+   浅色主题适配（#screen[data-light="1"]）
+   主题是否浅色由 data.js 中 THEMES[*].light 决定，applyTheme 写入标记。
+   深色主题不受以下规则影响。
+   ============================================================ */
+#screen[data-light="1"] {
+  --ink: #1b2b40;
+  --ink-2: #46597a;
+  --ink-3: #7386a3;
+  --panel: rgba(255,255,255,.66);
+  --panel-2: rgba(255,255,255,.5);
+  --line: rgba(28,50,82,.16);
+  color: var(--ink);
+}
+/* 壁纸：把深色光斑换成浅色，避免浅色主题里出现大块暗斑 */
+#screen[data-light="1"] .wallpaper {
+  background:
+    radial-gradient(1200px 700px at 78% -10%, var(--bg-c) 0%, transparent 62%),
+    radial-gradient(1000px 800px at 5% 110%, rgba(255,255,255,.75) 0%, transparent 60%),
+    linear-gradient(118deg, var(--bg-a) 0%, var(--bg-b) 58%, var(--bg-c) 100%);
+}
+#screen[data-light="1"] .wallpaper::after { opacity: .3; }
+#screen[data-light="1"] .wallpaper-glow { opacity: .12; }
+#screen[data-light="1"] .wallpaper-grid {
+  opacity: .12;
+  background-image: linear-gradient(rgba(28,50,82,.28) 1px, transparent 1px), linear-gradient(90deg, rgba(28,50,82,.28) 1px, transparent 1px);
+}
+/* 左侧桌面图标 */
+#screen[data-light="1"] .desk-icon { color: #2b3f5c; }
+#screen[data-light="1"] .desk-icon:hover { background: rgba(28,50,82,.10); border-color: rgba(28,50,82,.20); }
+#screen[data-light="1"] .desk-icon .glyph { background: rgba(28,50,82,.10); box-shadow: 0 6px 16px rgba(28,50,82,.12), inset 0 1px rgba(255,255,255,.7); }
+#screen[data-light="1"] .rail-slogan { color: #24344d; text-shadow: 0 2px 10px rgba(255,255,255,.9); }
+/* 顶栏 */
+#screen[data-light="1"] .class-badge { background: rgba(255,255,255,.8); border-color: rgba(28,50,82,.14); box-shadow: 0 8px 24px rgba(28,50,82,.10); }
+#screen[data-light="1"] .top-quote { color: #334765; text-shadow: 0 1px 8px rgba(255,255,255,.9); }
+#screen[data-light="1"] .top-btn { background: rgba(255,255,255,.78); border-color: rgba(28,50,82,.18); }
+#screen[data-light="1"] .top-btn:hover { background: #fff; border-color: rgba(28,50,82,.34); }
+/* 卡片 */
+#screen[data-light="1"] .panel { box-shadow: 0 12px 30px rgba(28,50,82,.10), inset 0 1px rgba(255,255,255,.8); }
+#screen[data-light="1"] .panel::before { background: linear-gradient(90deg, transparent, rgba(28,50,82,.18), transparent); }
+/* 大数字 */
+#screen[data-light="1"] .cur-time { color: #22354f; text-shadow: 0 2px 16px rgba(255,255,255,.95); }
+#screen[data-light="1"] .cd-days { color: #22354f; text-shadow: 0 0 24px rgba(196,118,44,.25); }
+/* 请假通报 */
+#screen[data-light="1"] .leave-name { color: #aa2f4d; }
+#screen[data-light="1"] .leave-reason { color: #2c3e56; }
+/* 卡片内小元件：白色半透明换成浅灰半透明，浅底上才有层次 */
+#screen[data-light="1"] .hw-tab,
+#screen[data-light="1"] .duty-row,
+#screen[data-light="1"] .ov-stat,
+#screen[data-light="1"] .model-row,
+#screen[data-light="1"] .avatar,
+#screen[data-light="1"] .notice-item,
+#screen[data-light="1"] .stu-chip,
+#screen[data-light="1"] .mode-btn,
+#screen[data-light="1"] .dim-tab,
+#screen[data-light="1"] .behavior-chip,
+#screen[data-light="1"] .module-toggle,
+#screen[data-light="1"] .field input[type="text"],
+#screen[data-light="1"] .modal textarea,
+#screen[data-light="1"] .drawer-close,
+#screen[data-light="1"] .head-action-btn,
+#screen[data-light="1"] .login-code-btn,
+#screen[data-light="1"] .login-field input,
+#screen[data-light="1"] .login-code-wrap button {
+  background: rgba(28,50,82,.06);
+  border-color: rgba(28,50,82,.16);
+}
+#screen[data-light="1"] .cur-progress,
+#screen[data-light="1"] .group-bar,
+#screen[data-light="1"] .fun-bar { background: rgba(28,50,82,.12); }
+/* 深色浮层改浅色：编辑工具条、抽屉、弹窗、提示条、登录层 */
+#screen[data-light="1"] .edit-toolbar,
+#screen[data-light="1"] .toast {
+  background: rgba(255,255,255,.95);
+  border-color: rgba(28,50,82,.18);
+  box-shadow: 0 14px 36px rgba(28,50,82,.16);
+}
+#screen[data-light="1"] .drawer { background: rgba(255,255,255,.97); border-left-color: rgba(28,50,82,.16); }
+#screen[data-light="1"] .modal { background: #fff; border-color: rgba(28,50,82,.18); }
+#screen[data-light="1"] .login-overlay { background: radial-gradient(900px 600px at 50% 30%, rgba(224,236,248,.96), rgba(200,216,236,.97)); }
+#screen[data-light="1"] .login-card { background: rgba(255,255,255,.97); border-color: rgba(28,50,82,.16); }
+#screen[data-light="1"] .login-badge { border-color: rgba(28,50,82,.2); }
+#screen[data-light="1"] .drawer-head { border-bottom-color: rgba(28,50,82,.12); }
+#screen[data-light="1"] .divider,
+#screen[data-light="1"] .login-divider::before { background: rgba(28,50,82,.12); }
+/* 深色 accent 按钮上的文字改白，保证可读 */
+#screen[data-light="1"] .et-btn.primary,
+#screen[data-light="1"] .wide-btn.primary,
+#screen[data-light="1"] .login-go,
+#screen[data-light="1"] .login-wb { color: #fff; }
+#screen[data-light="1"] .dtab.active { color: var(--accent); background: rgba(28,50,82,.08); }
+#screen[data-light="1"] .stu-chip.selected { color: var(--accent); background: rgba(28,50,82,.1); }
+#screen[data-light="1"] .theme-swatch.active,
+#screen[data-light="1"] .wall-choice.active { border-color: #2b3f5c; }
+#screen[data-light="1"] ::-webkit-scrollbar-thumb { background: rgba(28,50,82,.28); }
