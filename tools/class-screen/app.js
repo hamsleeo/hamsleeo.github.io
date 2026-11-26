@@ -3,6 +3,7 @@
   'use strict';
   var KEY = 'classScreenState_v1';
   var LAYOUT_KEY = 'classScreenLayoutLocal_v1'; // 本机布局覆盖：教室端拖拽的尺寸/位置优先于云端
+  var CLOUD_SEEN_KEY = 'classScreenCloudLayoutSeen_v1'; // 已应用的云端布局版本；云端变新时强制采用云端
   var screen = document.getElementById('screen');
   var grid = document.getElementById('dashboardGrid');
   var _modeParam = new URLSearchParams(location.search).get('mode');
@@ -581,9 +582,15 @@
     if (MODE !== 'admin') { var bar = $('#editToolbar'); if (bar) bar.style.display = 'none'; }
     save();
     toast('布局已保存');
-    // 通知教师端：预览里的布局草稿已更新，可点「保存布局到大屏」推云端
+    // 通知教师端：预览里的布局草稿已更新，父页面据此自动保存到云端（无需再点外层按钮）
     if (MODE === 'layout' && window.parent && window.parent !== window) {
-      try { window.parent.postMessage({ type: 'classScreenLayoutEdited' }, '*'); } catch (e) {}
+      try {
+        window.parent.postMessage({
+          type: 'classScreenLayoutEdited',
+          panelRects: state.panelRects,
+          version: +state.layoutVersion || 0
+        }, '*');
+      } catch (e) {}
     }
   }
   function switchSettingsTab(tab) {
@@ -1229,6 +1236,16 @@
       var row = await CloudAPI.loadBoard();
       if (row && row.data && Object.keys(row.data).length) {
         state = normalizeState(deepMerge(createDefaultState(), row.data));
+        // 云端布局版本变新（教师端刚保存）→ 强制采用云端，清掉本机旧草稿。
+        // 避免教室电脑时钟偏快时，本机草稿版本号压过云端导致新布局推不过去。
+        try {
+          var cloudVer = +state.layoutVersion || 0;
+          var seen = +localStorage.getItem(CLOUD_SEEN_KEY) || 0;
+          if (cloudVer > seen) {
+            localStorage.removeItem(LAYOUT_KEY);
+            localStorage.setItem(CLOUD_SEEN_KEY, String(cloudVer));
+          }
+        } catch (e) {}
         applyLocalLayoutOverride(); // 本机布局优先，避免教室端拖拽被 5 秒轮询覆盖
         syncSettingsInputs();
         renderAll();

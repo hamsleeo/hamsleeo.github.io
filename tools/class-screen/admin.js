@@ -739,14 +739,16 @@
       return d && d.panelRects && typeof d.panelRects === 'object' ? d : null;
     } catch (e) { return null; }
   }
-  async function saveLayoutToCloud() {
+  async function saveLayoutToCloud(incoming) {
     if (!session) { toast('请先登录后台'); return; }
-    var d = readLayoutDraft();
-    if (!d) { toast('请先在预览里拖动板块并点「✓ 完成」'); return; }
+    // 预览点「✓ 完成」会直接把布局随消息传过来；外层按钮则回退读本机草稿
+    var d = (incoming && incoming.panelRects) ? incoming : readLayoutDraft();
+    if (!d || !d.panelRects) { toast('请先在预览里拖动板块并点「✓ 完成」'); return; }
     state.panelRects = d.panelRects;
-    state.layoutVersion = Math.max(+d.version || 0, Date.now());
+    // 严格递增：压过云端旧版本、草稿版本和本机时间，确保大屏端一定判定为「云端更新」
+    state.layoutVersion = Math.max(+d.version || 0, +state.layoutVersion || 0, Date.now()) + 1;
     var ok = await save();
-    if (ok) layoutStatus('已同步 · 大屏约 5 秒内自动应用新布局');
+    if (ok) layoutStatus('已自动同步 · 大屏约 5 秒内应用新布局');
   }
   function reloadLayoutFrame() {
     var f = $('#layoutFrame'); if (!f) return;
@@ -759,12 +761,13 @@
   if (saveLayoutBtn) saveLayoutBtn.addEventListener('click', saveLayoutToCloud);
   var reloadLayoutBtn = $('#layoutReload');
   if (reloadLayoutBtn) reloadLayoutBtn.addEventListener('click', reloadLayoutFrame);
-  // 子页面（布局预览）点「完成」后通知：草稿已更新，提醒老师点保存
+  // 子页面（布局预览）点「完成」后，直接把布局写入云端，无需再点外层按钮
   window.addEventListener('message', function (e) {
     if (!e || !e.data || e.data.type !== 'classScreenLayoutEdited') return;
     var f = $('#layoutFrame');
     if (f && e.source !== f.contentWindow) return;
-    layoutStatus('检测到新布局草稿 · 点「保存布局到大屏」即可同步');
+    layoutStatus('收到新布局，正在同步到大屏…');
+    saveLayoutToCloud({ panelRects: e.data.panelRects, version: e.data.version });
   });
   // 一周课表：星期切换
   var dayTabs = $('#dayTabs');
