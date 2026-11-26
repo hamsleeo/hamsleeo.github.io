@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>班级管理 · 班务大屏</title>
-  <link rel="stylesheet" href="admin.css?v=20261126a" />
+  <link rel="stylesheet" href="admin.css?v=20261126b" />
 </head>
 <body>
   <!-- 登录 -->
@@ -521,11 +521,23 @@
     <div class="toast" id="toast"></div>
   </section>
 
+  <div class="dlg-mask" id="dlgMask" style="display:none">
+    <div class="dlg-card">
+      <div class="dlg-icon" id="dlgIcon">⚠️</div>
+      <div class="dlg-title" id="dlgTitle">确认操作</div>
+      <div class="dlg-body" id="dlgBody"></div>
+      <div class="dlg-actions">
+        <button class="dlg-btn" id="dlgCancel">取消</button>
+        <button class="dlg-btn dlg-danger" id="dlgOk">确认清空</button>
+      </div>
+    </div>
+  </div>
+
   <script src="vendor/workbuddy-cloud-sdk.js?v=20261123k"></script>
   <script src="vendor/xlsx.full.min.js?v=20261126a"></script>
   <script src="cloud-config.js?v=20261124w3"></script>
   <script src="cloud.js?v=20261124name1"></script>
   <script src="data.js?v=20261126a"></script>
-  <script src="admin.js?v=20261126b"></script>
+  <script src="admin.js?v=20261126c"></script>
 </body>
 </html>

@@ -304,3 +304,17 @@ label input,label select { margin-top:6px; }
 .period-row input { border:1px solid var(--line); border-radius:8px; padding:5px 8px; font-size:13px; min-width:0; }
 .period-row .p-name { width:72px; flex:none; }
 .period-row .p-sep { color:#8a94a3; flex:none; }
+
+/* 页面内确认弹窗（替代原生 confirm，触屏友好） */
+.dlg-mask { position:fixed; inset:0; background:rgba(10,20,16,.55); backdrop-filter:blur(3px); z-index:9999; display:flex; align-items:center; justify-content:center; animation:dlgIn .18s ease; }
+@keyframes dlgIn { from { opacity:0; } to { opacity:1; } }
+.dlg-card { width:min(420px, 88vw); background:#fff; border-radius:16px; padding:26px 26px 20px; box-shadow:0 24px 70px rgba(0,0,0,.35); text-align:center; animation:dlgPop .18s ease; }
+@keyframes dlgPop { from { transform:scale(.92); opacity:0; } to { transform:scale(1); opacity:1; } }
+.dlg-icon { font-size:40px; line-height:1; margin-bottom:10px; }
+.dlg-title { font-size:18px; font-weight:800; color:#22312b; margin-bottom:10px; }
+.dlg-body { font-size:13.5px; color:#5a6a60; line-height:1.8; white-space:pre-line; }
+.dlg-actions { display:flex; gap:12px; margin-top:20px; }
+.dlg-btn { flex:1; padding:11px 0; font-size:15px; font-weight:700; border-radius:12px; border:1px solid #c6d4cb; background:#f2f5f3; color:#3a4a40; cursor:pointer; }
+.dlg-btn:hover { background:#e8eeea; }
+.dlg-danger { background:#c0392b; border-color:#c0392b; color:#fff; }
+.dlg-danger:hover { background:#a93226; }

@@ -965,11 +965,36 @@
     URL.revokeObjectURL(a.href);
     toast('模板已下载，第一列姓名、第二列学号（可无学号列）');
   });
-  // 一键清空名单：双重确认，防误触
+  // 页面内确认弹窗：替代原生 confirm，触屏友好且不会被浏览器拦截
+  function uiConfirm(opts) {
+    var mask = $('#dlgMask');
+    $('#dlgTitle').textContent = opts.title || '确认操作';
+    $('#dlgBody').innerHTML = opts.body || '';
+    $('#dlgIcon').textContent = opts.icon || '⚠️';
+    $('#dlgOk').textContent = opts.okText || '确认';
+    mask.style.display = 'flex';
+    return new Promise(function (resolve) {
+      function close(val) {
+        mask.style.display = 'none';
+        $('#dlgOk').onclick = null;
+        $('#dlgCancel').onclick = null;
+        mask.onclick = null;
+        resolve(val);
+      }
+      $('#dlgOk').onclick = function () { close(true); };
+      $('#dlgCancel').onclick = function () { close(false); };
+      mask.onclick = function (e) { if (e.target === mask) close(false); };
+    });
+  }
+  // 一键清空名单：页面内弹窗确认，防误触
   $('#clearRoster').addEventListener('click', async function () {
     if (!state.students.length) { toast('名单已经是空的'); return; }
-    if (!confirm('确定要一键清空全部 ' + state.students.length + ' 名学生吗？\n\n积分记录、分组归属将一并移除！')) return;
-    if (!confirm('再次确认：清空后无法恢复，确定继续？')) return;
+    var ok = await uiConfirm({
+      title: '确认清空全部学生名单？',
+      body: '当前共 <b style="color:#c0392b">' + state.students.length + '</b> 名学生。<br/>清空后<b>积分记录、分组归属将一并移除，且无法恢复</b>！',
+      okText: '确认清空'
+    });
+    if (!ok) return;
     state.students = [];
     state.groups.forEach(function (g) { g.members = []; });
     selectedStudents.clear(); selectedAtt.clear();
