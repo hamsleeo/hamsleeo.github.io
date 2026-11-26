@@ -189,11 +189,42 @@
       if (res.error) throw new Error(res.error.message || '读取班级授权失败');
       classes = (res.data || []).map(function (r) { return r.board_key; });
     }
+    // 优先显示用户在数据库里登记的姓名（可在"我的"页修改），
+    // 读不到（RLS 拦截/字段为空）时回退 session 里的手机号/邮箱。
+    var realName = null;
+    try {
+      var uid = session && session.user && session.user.id;
+      if (uid) {
+        var mine = await cloud.database.from('class_roles')
+          .select('display_name').eq('user_id', uid).limit(1);
+        if (!mine.error && mine.data && mine.data.length && mine.data[0].display_name) {
+          realName = mine.data[0].display_name;
+        }
+      }
+    } catch (e) { /* 回退 session 名 */ }
     return {
       role: role,
       classes: classes,
-      displayName: displayName(session)
+      displayName: realName || displayName(session)
     };
+  }
+
+  // 修改自己的姓名（class_roles.display_name），注册后可随时更改
+  async function updateMyName(session, newName) {
+    if (!cloud) throw new Error('云服务未初始化');
+    if (!session) throw new Error('请先登录');
+    var name = String(newName || '').trim();
+    if (!name) throw new Error('姓名不能为空');
+    if (name.length > 20) throw new Error('姓名不能超过 20 个字');
+    var uid = session && session.user && session.user.id;
+    if (!uid) throw new Error('未获取到用户标识，请重新登录');
+    var res = await cloud.database.from('class_roles')
+      .update({ display_name: name })
+      .eq('user_id', uid)
+      .select('user_id, display_name');
+    if (res.error) throw new Error(res.error.message || '修改姓名失败');
+    if (!res.data || !res.data.length) throw new Error('没有权限修改姓名');
+    return res.data[0].display_name;
   }
 
   async function listUsers() {
@@ -394,6 +425,7 @@
     blankState: blankState,
     loadBoard: loadBoard, saveBoard: saveBoard,
     getMyAccess: getMyAccess, listClasses: listClasses, listUsers: listUsers,
+    updateMyName: updateMyName,
     assignTeacher: assignTeacher, removeAssignment: removeAssignment,
     setUserRole: setUserRole, createClass: createClass,
     listBlocked: listBlocked, deleteTeacher: deleteTeacher, restoreTeacher: restoreTeacher,

@@ -756,6 +756,22 @@
   if (noAccessLogout) noAccessLogout.addEventListener('click', function () { $('#logout').click(); });
   $('#openScreen').addEventListener('click', function () { window.open(CloudAPI.boardUrl(), '_blank'); });
   $('#openScreen2').addEventListener('click', function () { window.open(CloudAPI.boardUrl(), '_blank'); });
+  $('#changeName').addEventListener('click', async function () {
+    if (!session || !access) { toast('请先登录'); return; }
+    var cur = access.displayName || '';
+    var name = prompt('请输入新的姓名（最多 20 个字）', cur);
+    if (name === null) return;
+    name = name.trim();
+    if (!name) { toast('姓名不能为空'); return; }
+    if (name === cur) { toast('姓名未变化'); return; }
+    try {
+      var saved = await CloudAPI.updateMyName(session, name);
+      access.displayName = saved;
+      applyAccessUI();
+      renderProfile();
+      toast('姓名已更新为「' + saved + '」');
+    } catch (e) { toast('修改失败：' + e.message); }
+  });
   $('#changePwd').addEventListener('click', async function () {
     var oldPwd = prompt('请输入当前密码'); if (oldPwd === null) return;
     var newPwd = prompt('请输入新密码（至少 6 位）'); if (newPwd === null) return;
