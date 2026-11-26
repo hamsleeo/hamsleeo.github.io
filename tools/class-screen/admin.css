@@ -297,3 +297,10 @@ label input,label select { margin-top:6px; }
 .day-panes .day-pane { display:none; }
 .day-panes .day-pane.active { display:block; }
 .day-pane textarea { margin:0; min-height:230px; }
+
+/* 上下课时间预设 */
+.periods-list { display:grid; grid-template-columns:repeat(auto-fill,minmax(230px,1fr)); gap:8px; margin:10px 0; }
+.period-row { display:flex; align-items:center; gap:6px; border:1px solid var(--line); border-radius:10px; padding:6px 8px; background:#fafbfc; }
+.period-row input { border:1px solid var(--line); border-radius:8px; padding:5px 8px; font-size:13px; min-width:0; }
+.period-row .p-name { width:72px; flex:none; }
+.period-row .p-sep { color:#8a94a3; flex:none; }

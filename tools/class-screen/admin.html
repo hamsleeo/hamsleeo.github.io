@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>班级管理 · 班务大屏</title>
-  <link rel="stylesheet" href="admin.css?v=20261124week1" />
+  <link rel="stylesheet" href="admin.css?v=20261126a" />
 </head>
 <body>
   <!-- 登录 -->
@@ -321,6 +321,13 @@
                 <input id="batchStu" placeholder="批量添加：每行一个姓名，或 姓名|学号" />
                 <button class="ghost" id="batchAddStu">批量导入</button>
               </div>
+              <div class="inline-form">
+                <input type="file" id="importStuFile" accept=".xlsx,.xls,.csv" style="display:none" />
+                <button class="ghost" id="importStuBtn">📂 从表格导入名单（.xlsx / .csv）</button>
+                <button class="ghost" id="stuTemplateBtn">下载导入模板</button>
+                <button class="ghost danger" id="clearStu">🗑 一键清空名单</button>
+              </div>
+              <p class="hint">表格第一列姓名、第二列学号（可无学号列）；支持 Excel 工作簿或 CSV，导入时自动跳过重名。清空名单会同时移除积分记录与分组归属，不可恢复，请先确认。</p>
               <div id="stuManageList" class="manage-list"></div>
             </div>
           </div>
@@ -375,6 +382,28 @@
             <div class="card">
               <h2>一周课程表 <small>按周编辑，大屏每天自动显示当天的课；每行：科目|开始|结束</small></h2>
               <p class="hint">选择星期分别编辑每天的课务，保存后大屏按当天星期自动切换、每周循环。<b>单双周课程</b>：像第八节这样隔周不同的课，科目写成 <code>单周科目/双周科目</code>（如 <code>道德与法治/心理健康</code>），大屏会按「基础信息 → 单双周基准」里设置的「本学期开学日」自动选课，标题显示「单周/双周」。每学期开学初记得更新那个日期。<br><b>晚自习</b>：晚自习就当普通一节课写在课表最后两行，同样支持单双周——科目写成 <code>单周科目/双周科目</code>。<b>注意</b>：单双周两边都要写全类名（如 <code>晚自习一 数学/晚自习一 物理|19:00|19:40</code>、<code>晚自习二 英语/晚自习二 化学|19:50|20:30</code>），若只写 <code>晚自习一 数学/物理</code>，双周会只显示「物理」而丢掉前缀。若两节固定不轮换，直接写 <code>数学|19:00|19:40</code> 即可。大屏只显示科目、按开学基准自动切换并打「单周/双周」角标，到点自动进入「进行中」。</p>
+              <h2>上下课时间预设 <small>各节次上下课时间，可随时修改；快速添加课程时自动套用</small></h2>
+              <div id="periodsList" class="periods-list"></div>
+              <div class="inline-form">
+                <button type="button" class="ghost sm" id="addPeriod">＋ 添加一节</button>
+                <button type="button" class="ghost sm" id="resetPeriods">恢复默认作息</button>
+              </div>
+              <h2>快速添加课程 <small>选科目和节次，自动写入下方当前星期</small></h2>
+              <div class="inline-form">
+                <input id="quickSubj" list="subjectList" placeholder="科目（下拉可选，也可手动输入）" />
+                <datalist id="subjectList">
+                  <option value="语文"></option><option value="数学"></option><option value="英语"></option>
+                  <option value="物理"></option><option value="化学"></option><option value="生物"></option>
+                  <option value="政治"></option><option value="历史"></option><option value="地理"></option>
+                  <option value="科学"></option><option value="道德与法治"></option><option value="体育"></option>
+                  <option value="体育与健康"></option><option value="音乐"></option><option value="美术"></option>
+                  <option value="信息技术"></option><option value="心理健康"></option><option value="班会"></option>
+                  <option value="阅读"></option><option value="书法"></option><option value="劳动"></option>
+                  <option value="自习"></option><option value="晚自习一"></option><option value="晚自习二"></option>
+                </datalist>
+                <select id="quickPeriod"></select>
+                <button type="button" class="primary sm" id="quickAddCourse">＋ 添加到当前星期</button>
+              </div>
               <div class="day-tabs" id="dayTabs">
                 <button type="button" class="day-tab active" data-day="1">周一</button>
                 <button type="button" class="day-tab" data-day="2">周二</button>
@@ -493,9 +522,10 @@
   </section>
 
   <script src="vendor/workbuddy-cloud-sdk.js?v=20261123k"></script>
+  <script src="vendor/xlsx.full.min.js?v=20261126a"></script>
   <script src="cloud-config.js?v=20261124w3"></script>
   <script src="cloud.js?v=20261124name1"></script>
-  <script src="data.js?v=20261123k"></script>
-  <script src="admin.js?v=20261124name1"></script>
+  <script src="data.js?v=20261126a"></script>
+  <script src="admin.js?v=20261126a"></script>
 </body>
 </html>

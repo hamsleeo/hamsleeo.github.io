@@ -192,6 +192,8 @@
     state.leaves = lines('leaves').map(function (l) { var p = l.split('|'); return { name: p[0] || '', reason: p[1] || '', start: p[2] || '', end: p[3] || p[2] || '' }; });
     state.models = lines('models').map(function (l) { var p = l.split('|'); return { name: p[0] || '', role: p[1] || '优秀学生', score: +p[2] || 0, emoji: p[3] || '🌟' }; });
     state.fun = lines('fun').map(function (l) { var p = l.split('|'); return { subject: p[0] || '其他', title: p[1] || '任务', total: +p[2] || 45, done: +p[3] || 0, unfinished: p[4] || '' }; });
+    var periodsBox = $('#periodsList');
+    if (periodsBox) state.periods = collectPeriods();
   }
   function set(k, v) { var el = $('[data-key="' + k + '"]'); if (el) el.value = v == null ? '' : v; }
   function fillForm() {
@@ -213,6 +215,7 @@
     set('leaves', (state.leaves || []).map(function (l) { return [l.name, l.reason, l.start, l.end === l.start ? '' : l.end].join('|'); }).join('\n'));
     set('models', state.models.map(function (m) { return [m.name, m.role, m.score, m.emoji].join('|'); }).join('\n'));
     set('fun', state.fun.map(function (f) { return [f.subject, f.title, f.total, f.done, f.unfinished].join('|'); }).join('\n'));
+    renderPeriods();
     renderChips(); renderShout(); renderHome();
   }
 
@@ -629,6 +632,70 @@
     for (var d = 1; d <= 5; d++) { var el = $('[data-key="schedule' + d + '"]'); if (el) el.value = text; }
     toast('已把' + (active ? active.textContent : '周一') + '的课复制到周一至周五，记得点保存');
   });
+  // 上下课时间预设：可增删改，保存后快速添加课程自动套用
+  function renderPeriods() {
+    if (!state.periods || !state.periods.length) {
+      state.periods = (window.DEFAULT_PERIODS || []).map(function (p) { return { name: p.name, start: p.start, end: p.end }; });
+    }
+    var box = $('#periodsList'); if (!box) return;
+    box.innerHTML = state.periods.map(function (p, i) {
+      return '<div class="period-row" data-pi="' + i + '">' +
+        '<input class="p-name" value="' + esc(p.name) + '" placeholder="节次名" />' +
+        '<input class="p-start" type="time" value="' + esc(p.start) + '" />' +
+        '<span class="p-sep">—</span>' +
+        '<input class="p-end" type="time" value="' + esc(p.end) + '" />' +
+        '<button type="button" class="mini" data-pdel="' + i + '">删</button></div>';
+    }).join('') || '<span class="hint">暂无节次，点「添加一节」开始</span>';
+    refreshQuickPeriods();
+  }
+  function refreshQuickPeriods() {
+    var sel = $('#quickPeriod'); if (!sel) return;
+    sel.innerHTML = state.periods.map(function (p, i) {
+      return '<option value="' + i + '">' + esc(p.name) + ' ' + p.start + '-' + p.end + '</option>';
+    }).join('') || '<option value="">无节次</option>';
+  }
+  function collectPeriods() {
+    var out = [];
+    $$('#periodsList .period-row').forEach(function (r) {
+      var name = (r.querySelector('.p-name').value || '').trim();
+      var start = r.querySelector('.p-start').value, end = r.querySelector('.p-end').value;
+      if (!name || !start || !end) return;
+      out.push({ name: name, start: start, end: end });
+    });
+    return out;
+  }
+  $('#addPeriod').addEventListener('click', function () {
+    state.periods = collectPeriods();
+    state.periods.push({ name: '第' + (state.periods.length + 1) + '节', start: '08:00', end: '08:40' });
+    renderPeriods();
+  });
+  $('#resetPeriods').addEventListener('click', async function () {
+    if (!confirm('恢复默认作息？当前修改会被覆盖（不影响已填课程）。')) return;
+    state.periods = (window.DEFAULT_PERIODS || []).map(function (p) { return { name: p.name, start: p.start, end: p.end }; });
+    renderPeriods(); if (await save()) toast('已恢复默认作息');
+  });
+  $('#periodsList').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-pdel]'); if (!b) return;
+    state.periods = collectPeriods();
+    state.periods.splice(+b.dataset.pdel, 1);
+    renderPeriods();
+  });
+  // 快速添加课程：科目下拉可选可手动输入，节次时间自动套用
+  $('#quickAddCourse').addEventListener('click', function () {
+    if (!state.periods || !state.periods.length) { toast('请先设置节次时间'); return; }
+    var subj = ($('#quickSubj').value || '').trim();
+    if (!subj) { toast('请选择或输入科目'); return; }
+    var p = state.periods[+($('#quickPeriod').value || 0)];
+    if (!p) { toast('请先设置节次时间'); return; }
+    var active = $('#dayTabs .day-tab.active');
+    var day = active ? active.dataset.day : '1';
+    var el = $('[data-key="schedule' + day + '"]');
+    if (!el) return;
+    var line = subj + '|' + p.start + '|' + p.end;
+    el.value = (el.value ? el.value.replace(/\s+$/, '') + '\n' : '') + line;
+    $('#quickSubj').value = '';
+    toast('已添加到' + (active ? active.textContent : '周一') + '：' + line + '，记得点保存');
+  });
   $('#statSeg').addEventListener('click', function (e) {
     var b = e.target.closest('[data-stat]'); if (!b) return;
     $$('#statSeg button').forEach(function (x) { x.classList.toggle('active', x === b); });
@@ -882,6 +949,72 @@
     $('#batchStu').value = '';
     renderManageLists(); renderStudents(); renderHome(); renderStats(); if (await save()) toast('已导入 ' + added + ' 名学生');
   });
+  // 表格导入学生名单：支持 .xlsx/.xls/.csv（SheetJS 解析 Excel，CSV 自动识别编码）
+  $('#importStuBtn').addEventListener('click', function () { $('#importStuFile').click(); });
+  $('#importStuFile').addEventListener('change', function () {
+    var f = this.files && this.files[0]; this.value = '';
+    if (f) importRosterFile(f);
+  });
+  $('#stuTemplateBtn').addEventListener('click', function () {
+    var csv = '\uFEFF姓名,学号\n张三,1\n李四,2\n王五,3\n';
+    var blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = '学生名单导入模板.csv';
+    document.body.appendChild(a); a.click(); a.remove();
+    URL.revokeObjectURL(a.href);
+    toast('模板已下载，第一列姓名、第二列学号（可无学号列）');
+  });
+  // 一键清空名单：双重确认，防误触
+  $('#clearStu').addEventListener('click', async function () {
+    if (!state.students.length) { toast('名单已经是空的'); return; }
+    if (!confirm('确定要一键清空全部 ' + state.students.length + ' 名学生吗？\n\n积分记录、分组归属将一并移除！')) return;
+    if (!confirm('再次确认：清空后无法恢复，确定继续？')) return;
+    state.students = [];
+    state.groups.forEach(function (g) { g.members = []; });
+    selectedStudents.clear(); selectedAtt.clear();
+    renderManageLists(); renderStudents(); renderHome(); renderStats(); renderAttendance();
+    if (await save()) toast('已清空全部学生名单');
+  });
+  async function importRosterFile(file) {
+    try {
+      var rows;
+      if (/\.csv$/i.test(file.name)) {
+        var buf = new Uint8Array(await file.arrayBuffer());
+        var text;
+        try { text = new TextDecoder('utf-8', { fatal: true }).decode(buf); }
+        catch (e) { text = new TextDecoder('gbk').decode(buf); }
+        text = text.replace(/^\uFEFF/, '');
+        rows = text.split(/\r\n?|\n/).map(function (l) { return l.split(/[,\t;，]/); })
+          .filter(function (r) { return r.some(function (c) { return String(c || '').trim(); }); });
+      } else {
+        if (typeof XLSX === 'undefined') throw new Error('表格组件未加载，请刷新页面重试');
+        var wb = XLSX.read(new Uint8Array(await file.arrayBuffer()), { type: 'array' });
+        rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header: 1, defval: '' });
+      }
+      var res = parseRosterRows(rows || []);
+      if (!res.added) { toast(res.skipped ? '没有新增学生（跳过重复 ' + res.skipped + ' 人）' : '没有读到可导入的学生姓名'); return; }
+      renderManageLists(); renderStudents(); renderHome(); renderStats();
+      if (await save()) toast('导入完成：新增 ' + res.added + ' 人' + (res.skipped ? '，跳过重复 ' + res.skipped + ' 人' : ''));
+    } catch (e) { toast('导入失败：' + e.message); }
+  }
+  function parseRosterRows(rows) {
+    var startIdx = 0;
+    if (rows.length && (rows[0] || []).some(function (c) { return /姓名|名字|^name$/i.test(String(c || '').trim()); })) startIdx = 1;
+    var existing = {};
+    state.students.forEach(function (s) { existing[s.name] = 1; });
+    var added = 0, skipped = 0;
+    for (var i = startIdx; i < rows.length; i++) {
+      var r = rows[i] || [];
+      var name = String(r[0] == null ? '' : r[0]).trim().replace(/\s+/g, '');
+      if (!name || /^学号$|^序号$|^name$/i.test(name)) continue;
+      if (existing[name]) { skipped++; continue; }
+      existing[name] = 1;
+      var no = String(r[1] == null ? '' : r[1]).trim();
+      state.students.push(newStudent(name, no)); added++;
+    }
+    return { added: added, skipped: skipped };
+  }
   $('#stuManageList').addEventListener('click', async function (e) {
     var del = e.target.closest('[data-del-stu]');
     if (del) {

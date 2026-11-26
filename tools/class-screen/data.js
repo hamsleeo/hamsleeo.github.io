@@ -82,6 +82,19 @@
   }
 
   function createDefaultState() {
+    // 默认作息：各节次上下课时间预设，教师端可随时修改；快速添加课程时自动套用
+    var defaultPeriods = [
+      { name: '第1节', start: '08:00', end: '08:40' },
+      { name: '第2节', start: '08:50', end: '09:30' },
+      { name: '第3节', start: '09:50', end: '10:30' },
+      { name: '第4节', start: '10:40', end: '11:20' },
+      { name: '第5节', start: '14:00', end: '14:40' },
+      { name: '第6节', start: '14:50', end: '15:30' },
+      { name: '第7节', start: '15:40', end: '16:20' },
+      { name: '第8节', start: '16:40', end: '17:20' },
+      { name: '晚自习一', start: '19:00', end: '19:40' },
+      { name: '晚自习二', start: '19:50', end: '20:30' }
+    ];
     // 默认课表：周一至周五同一套示范课表，周末留空；教师端可按周分别编辑
     var baseSchedule = [
       { subject: '语文', start: '08:00', end: '08:40' },
@@ -119,6 +132,8 @@
       /* schedule 为兼容旧数据的“当日课表”；新数据以 weeklySchedule（周一~周日）为准 */
       schedule: baseSchedule,
       weeklySchedule: weeklySchedule,
+      /* 作息时间预设：各节次上下课时间，教师端可改 */
+      periods: defaultPeriods,
       homework: [
         { subject: '语文', items: [
           { title: '第六单元《出师表》课后练习', detail: '完成课后「思考探究」第一、二、三题；朗读课文两遍；整理「陟罚臧否」等五个重点词语。' },
@@ -183,6 +198,7 @@
 
   global.DEFAULT_STATE = createDefaultState();
   global.createDefaultState = createDefaultState;
+  global.DEFAULT_PERIODS = createDefaultState().periods;
   global.THEMES = {
     aurora:   { name: '极光青', a: '#16243d', b: '#1d3a48', c: '#2e5b58', accent: '#7fd6c0', accent2: '#ffc97a' },
     warm:     { name: '暖橘暮', a: '#2a1e2e', b: '#3c2b35', c: '#6b4a3c', accent: '#ffb98a', accent2: '#ffd98a' },
