@@ -349,3 +349,15 @@ label input,label select { margin-top:6px; }
 .module-style-fields input[type=color] { padding:3px; height:38px; cursor:pointer; }
 .module-style-fields .ms-size { max-width:90px; }
 @media (max-width:640px){ .module-style-list { grid-template-columns:1fr; } }
+
+/* ---------- 可视化布局预览（教师端拖板块 → 保存云端 → 大屏同步） ---------- */
+.layout-designer { margin-top:16px; }
+.layout-frame-wrap {
+  position:relative; width:100%; aspect-ratio:16/9; margin:10px 0 12px;
+  border:1px solid var(--line); border-radius:12px; overflow:hidden; background:#10241f;
+}
+.layout-frame-wrap iframe {
+  position:absolute; left:0; top:0; width:100%; height:100%; border:0; display:block;
+}
+.layout-actions { align-items:center; gap:10px; flex-wrap:wrap; }
+.layout-actions .hint { margin:0; font-size:12px; }

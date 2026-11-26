@@ -144,6 +144,10 @@
          x/y=左上角，w/h=宽高。编辑模式下拖动板块本体移动、拖八角缩放，
          结果存这里；null 的模块用 defaultPanelRects 兜底。 */
       panelRects: defaultPanelRects(),
+      /* 布局版本号：谁最后改了板块位置/大小，谁就把这个时间戳顶到最新。
+         大屏本机拖拽会写本地覆盖记录；教师端保存布局会写云端。
+         同步时只有"本机版本 >= 云端版本"才用本机布局，否则教师端新版布局生效。 */
+      layoutVersion: 0,
       /* 手机喊话：老师从管理端发送，展示端检测 id 变化后弹层并朗读 */
       shout: { id: '', text: '', from: '班主任', duration: 12, speak: true, voice: 'xiaoxiao', voiceSpeed: 4, createdAt: '' },
       /* 喊话蒙版样式：班主任在后台「教室喊话」页选模板 + 背景色。

@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>班级管理 · 班务大屏</title>
-  <link rel="stylesheet" href="admin.css?v=20261126shout1" />
+  <link rel="stylesheet" href="admin.css?v=20261126sync1" />
 </head>
 <body>
   <!-- 登录 -->
@@ -397,12 +397,23 @@
           <div class="subpane" data-spane="layout">
             <div class="card">
               <h2>板块显示与标题样式 <small>勾选要在教室大屏显示的板块；可单独设置每个板块标题的颜色和字号</small></h2>
-              <p class="hint">这里勾选的板块会显示在大屏上，未勾选的不显示。<b>板块的位置和大小</b>请在大屏上点右上角「编辑」按钮：拖动板块本体移动位置，拖板块四角/四边缩放任意大小；本页只管「显示哪些」和「标题颜色/字号」。<b>标题颜色</b>留空表示跟随主题默认色；<b>字号</b>填数字（如 22），留空表示默认大小。</p>
+              <p class="hint">这里勾选的板块会显示在大屏上，未勾选的不显示。<b>标题颜色</b>留空表示跟随主题默认色；<b>字号</b>填数字（如 22），留空表示默认大小。</p>
               <div class="module-style-list" id="moduleStyleList"></div>
               <div class="inline-form">
                 <button type="button" class="ghost sm" id="resetModuleStyles">恢复默认标题样式</button>
               </div>
               <button class="primary save" data-save>保存并同步到大屏</button>
+            </div>
+
+            <div class="card layout-designer">
+              <h2>可视化布局调整 <small>在下方预览里直接拖动板块：改位置、拉大小，保存后教室大屏自动同步</small></h2>
+              <p class="hint">在预览里点右上角 <b>「✎ 编辑」</b> → 拖板块本体移动位置、拖板块四角/四边缩放 → 点 <b>「✓ 完成」</b>，最后回来点 <b>「保存布局到大屏」</b>。教室大屏约 5 秒内自动应用新布局，无需到大屏上手动操作。点「重置布局」可恢复默认排布。</p>
+              <div class="layout-frame-wrap"><iframe id="layoutFrame" title="大屏布局预览" scrolling="no"></iframe></div>
+              <div class="inline-form layout-actions">
+                <button type="button" class="primary sm" id="layoutSaveCloud">保存布局到大屏</button>
+                <button type="button" class="ghost sm" id="layoutReload">放弃草稿 · 重新载入云端布局</button>
+                <span class="hint" id="layoutStatus"></span>
+              </div>
             </div>
           </div>
 
@@ -565,7 +576,7 @@
   <script src="vendor/xlsx.full.min.js?v=20261126a"></script>
   <script src="cloud-config.js?v=20261124w3"></script>
   <script src="cloud.js?v=20261124name1"></script>
-  <script src="data.js?v=20261126shout1"></script>
-  <script src="admin.js?v=20261126shout1"></script>
+  <script src="data.js?v=20261126sync1"></script>
+  <script src="admin.js?v=20261126sync1"></script>
 </body>
 </html>

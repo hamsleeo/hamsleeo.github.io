@@ -706,6 +706,7 @@
   $('#manageTabs').addEventListener('click', function (e) {
     var b = e.target.closest('[data-mtab]'); if (!b) return;
     switchManageTab(b.dataset.mtab); renderManageLists();
+    if (b.dataset.mtab === 'layout') loadLayoutFrame();
   });
   // 板块布局：颜色被改动即视为显式指定（清除"留空"标记）；恢复默认标题样式
   var styleList = $('#moduleStyleList');
@@ -719,6 +720,51 @@
     MODULES.forEach(function (m) { state.moduleStyles[m.key] = { titleColor: '', titleSize: 0 }; });
     renderModuleStyles();
     toast('标题样式已恢复默认，记得点保存同步大屏');
+  });
+
+  /* ---------- 可视化布局：教师端拖板块 → 草稿存本机 → 顶版本号写云端 ---------- */
+  var LAYOUT_DRAFT_KEY = 'classScreenLayoutLocal_v1';
+  function layoutStatus(text) { var el = $('#layoutStatus'); if (el) el.textContent = text || ''; }
+  function layoutFrameUrl() { return CloudAPI.boardUrl(CloudAPI.getBoardKey()) + '&mode=layout'; }
+  function loadLayoutFrame() {
+    var f = $('#layoutFrame'); if (!f) return;
+    if (!f.getAttribute('src')) {
+      f.src = layoutFrameUrl();
+      layoutStatus('预览已载入 · 点右上角「编辑」后拖动板块');
+    }
+  }
+  function readLayoutDraft() {
+    try {
+      var d = JSON.parse(localStorage.getItem(LAYOUT_DRAFT_KEY) || 'null');
+      return d && d.panelRects && typeof d.panelRects === 'object' ? d : null;
+    } catch (e) { return null; }
+  }
+  async function saveLayoutToCloud() {
+    if (!session) { toast('请先登录后台'); return; }
+    var d = readLayoutDraft();
+    if (!d) { toast('请先在预览里拖动板块并点「✓ 完成」'); return; }
+    state.panelRects = d.panelRects;
+    state.layoutVersion = Math.max(+d.version || 0, Date.now());
+    var ok = await save();
+    if (ok) layoutStatus('已同步 · 大屏约 5 秒内自动应用新布局');
+  }
+  function reloadLayoutFrame() {
+    var f = $('#layoutFrame'); if (!f) return;
+    try { localStorage.removeItem(LAYOUT_DRAFT_KEY); } catch (e) {}
+    f.src = layoutFrameUrl() + '&t=' + Date.now();
+    layoutStatus('已从云端重新载入布局');
+    toast('已放弃未保存的草稿');
+  }
+  var saveLayoutBtn = $('#layoutSaveCloud');
+  if (saveLayoutBtn) saveLayoutBtn.addEventListener('click', saveLayoutToCloud);
+  var reloadLayoutBtn = $('#layoutReload');
+  if (reloadLayoutBtn) reloadLayoutBtn.addEventListener('click', reloadLayoutFrame);
+  // 子页面（布局预览）点「完成」后通知：草稿已更新，提醒老师点保存
+  window.addEventListener('message', function (e) {
+    if (!e || !e.data || e.data.type !== 'classScreenLayoutEdited') return;
+    var f = $('#layoutFrame');
+    if (f && e.source !== f.contentWindow) return;
+    layoutStatus('检测到新布局草稿 · 点「保存布局到大屏」即可同步');
   });
   // 一周课表：星期切换
   var dayTabs = $('#dayTabs');
@@ -958,6 +1004,10 @@
     var label = e.target.selectedOptions[0] ? e.target.selectedOptions[0].text : '该班级';
     stopTimer();
     CloudAPI.setBoardKey(nextKey);
+    // 布局草稿是教师机本机存的，换班级必须丢弃，否则会把 A 班布局存到 B 班
+    try { localStorage.removeItem(LAYOUT_DRAFT_KEY); } catch (e) {}
+    var layoutFrame = $('#layoutFrame');
+    if (layoutFrame && layoutFrame.getAttribute('src')) layoutFrame.removeAttribute('src');
     state = createDefaultState(); state.attendance = {};
     selectedStudents.clear(); selectedAtt.clear();
     rollNameText = ''; $('#rollSub').textContent = '';

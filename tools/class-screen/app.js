@@ -5,7 +5,10 @@
   var LAYOUT_KEY = 'classScreenLayoutLocal_v1'; // 本机布局覆盖：教室端拖拽的尺寸/位置优先于云端
   var screen = document.getElementById('screen');
   var grid = document.getElementById('dashboardGrid');
-  var MODE = new URLSearchParams(location.search).get('mode') === 'admin' ? 'admin' : 'display';
+  var _modeParam = new URLSearchParams(location.search).get('mode');
+  // layout = 教师端内嵌的布局预览/编辑模式：与大屏同款拖拽编辑器，
+  // 但不轮询、不弹喊话、不显示桌面图标，编辑完成后通知父页面保存云端。
+  var MODE = _modeParam === 'admin' ? 'admin' : (_modeParam === 'layout' ? 'layout' : 'display');
   var cloudReady = false;
   var remoteSession = null;
   var saveTimer = null;
@@ -52,6 +55,8 @@
     if (!st.shoutStyle || typeof st.shoutStyle !== 'object') st.shoutStyle = { template: 'classic', bgColor: '' };
     if (!st.shoutStyle.template) st.shoutStyle.template = 'classic';
     if (st.shoutStyle.bgColor == null) st.shoutStyle.bgColor = '';
+    // 布局版本号：老数据没有时按 0 处理，本机布局记录优先
+    st.layoutVersion = +st.layoutVersion || 0;
     // 自由布局：老数据没有 panelRects 时用默认矩形补齐每个模块
     if (!st.panelRects || typeof st.panelRects !== 'object') st.panelRects = window.defaultPanelRects ? window.defaultPanelRects() : {};
     else {
@@ -91,26 +96,44 @@
   }
   function save() {
     try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) { /* 隐私模式忽略 */ }
-    // 自由布局单独落地：教室端（display）也能持久保存，且不被云端轮询覆盖
+    // 自由布局单独落地：教室端（display）拖拽后能持久保存，且能用版本号和云端比新旧
     try {
       if (state.panelRects) {
-        localStorage.setItem(LAYOUT_KEY, JSON.stringify({ panelRects: state.panelRects, ts: Date.now() }));
+        localStorage.setItem(LAYOUT_KEY, JSON.stringify({
+          panelRects: state.panelRects,
+          ts: Date.now(),
+          version: +state.layoutVersion || 0
+        }));
       }
     } catch (e) { /* 忽略 */ }
     if (!cloudReady || MODE !== 'admin') return;
     clearTimeout(saveTimer);
     saveTimer = setTimeout(saveNow, 600);
   }
-  // 云端数据合并后，用本机布局覆盖（教室端拖拽过的板块尺寸/位置优先）
+  // 大屏上改了布局：顶高本机版本号，让这份布局在下次云端轮询时依然有效
+  function markLayoutEdited() {
+    state.layoutVersion = Date.now();
+    save();
+  }
+  // 云端数据合并后，用本机布局覆盖。
+  // 规则：本机布局版本 >= 云端版本 → 用本机（教室端刚拖过）；
+  //       本机版本更旧 → 丢弃本机覆盖，让教师端刚保存的新布局生效。
   function applyLocalLayoutOverride() {
     try {
       var raw = localStorage.getItem(LAYOUT_KEY);
-      if (!raw) return;
+      if (!raw) return false;
       var local = JSON.parse(raw);
-      if (local && local.panelRects && typeof local.panelRects === 'object') {
-        state.panelRects = deepMerge(window.defaultPanelRects ? window.defaultPanelRects() : {}, local.panelRects);
+      if (!local || !local.panelRects || typeof local.panelRects !== 'object') return false;
+      var cloudVer = +state.layoutVersion || 0;
+      var localVer = +local.version || 0;
+      if (localVer < cloudVer) {
+        localStorage.removeItem(LAYOUT_KEY); // 过期覆盖，清掉避免一直干扰
+        return false;
       }
-    } catch (e) { /* 忽略 */ }
+      state.panelRects = deepMerge(window.defaultPanelRects ? window.defaultPanelRects() : {}, local.panelRects);
+      if (localVer > cloudVer) state.layoutVersion = localVer;
+      return true;
+    } catch (e) { return false; }
   }
   function setSync(text) {
     var el = document.getElementById('syncStatus');
@@ -546,18 +569,22 @@
     // 展示模式 applyChrome() 把工具条隐藏了，进编辑态要恢复，否则「重置布局」按钮用不了
     var bar = $('#editToolbar');
     if (bar) bar.style.display = '';
-    openDrawer('settingsDrawer');
-    switchSettingsTab('layout');
+    // 教师端预览里不弹设置抽屉，否则会盖住画布没法拖板块
+    if (MODE !== 'layout') { openDrawer('settingsDrawer'); switchSettingsTab('layout'); }
   }
   function exitEdit() {
     ui.editing = false;
     screen.classList.remove('editing');
     $('#btnEdit').innerHTML = '<span>✎</span> 编辑';
     closeDrawers();
-    // 展示模式下编辑工具条默认隐藏，退出编辑态收回（管理模式保持可见）
-    if (MODE === 'display') { var bar = $('#editToolbar'); if (bar) bar.style.display = 'none'; }
+    // 展示/预览模式下编辑工具条默认隐藏，退出编辑态收回（管理模式保持可见）
+    if (MODE !== 'admin') { var bar = $('#editToolbar'); if (bar) bar.style.display = 'none'; }
     save();
     toast('布局已保存');
+    // 通知教师端：预览里的布局草稿已更新，可点「保存布局到大屏」推云端
+    if (MODE === 'layout' && window.parent && window.parent !== window) {
+      try { window.parent.postMessage({ type: 'classScreenLayoutEdited' }, '*'); } catch (e) {}
+    }
   }
   function switchSettingsTab(tab) {
     $$('#settingsTabs .dtab').forEach(function (b) { b.classList.toggle('active', b.dataset.tab === tab); });
@@ -632,7 +659,7 @@
     if (wasDragging.panel.hasPointerCapture && e && e.pointerId != null) {
       try { wasDragging.panel.releasePointerCapture(e.pointerId); } catch (err) {}
     }
-    save();
+    markLayoutEdited(); // 顶高版本号，避免被 5 秒云端轮询覆盖
   }
   grid.addEventListener('pointerup', endMove);
   grid.addEventListener('pointercancel', endMove);
@@ -979,7 +1006,7 @@
   /* ---------------- 启动 ---------------- */
   function applyChrome() {
     document.body.classList.add(MODE === 'admin' ? 'mode-admin' : 'mode-display');
-    if (MODE === 'display') {
+    if (MODE === 'display' || MODE === 'layout') {
       // 编辑按钮保留：班主任需要在教室大屏上直接拖动板块调整自由布局
       $('#btnScore').style.display = 'none';
       // 编辑工具条不用 display:none 隐藏：CSS 已用 transform 在非编辑态滑出屏幕，
@@ -1235,7 +1262,8 @@
       // 展示端轮询保持数据同步
     } else {
       await loadCloud();
-      setInterval(loadCloud, 5000); // 展示端每 5 秒自动同步，喊话更实时
+      // 教师端布局预览只读一次云端：拖拽过程中不能被 5 秒轮询重绘打断
+      if (MODE === 'display') setInterval(loadCloud, 5000);
     }
   }
 
@@ -1335,6 +1363,13 @@
     stop: rollStop,
     hide: rollHide,
     version: '20261126roll1'
+  };
+  /* 自由布局：教师端预览通过同源 localStorage 读草稿，这里提供只读接口便于核对与测试 */
+  window.ClassScreenFreeLayout = {
+    mode: MODE,
+    getRects: function () { return JSON.parse(JSON.stringify(state.panelRects || {})); },
+    getVersion: function () { return +state.layoutVersion || 0; },
+    save: function () { markLayoutEdited(); return +state.layoutVersion || 0; }
   };
   /* 喊话控制：桌面端/自动化测试可通过 CDP 驱动；桌面端实际走 data-live-shout 轮询 */
   window.ClassScreenShout = {
