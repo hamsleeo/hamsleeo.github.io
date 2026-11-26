@@ -966,7 +966,7 @@
     toast('模板已下载，第一列姓名、第二列学号（可无学号列）');
   });
   // 一键清空名单：双重确认，防误触
-  $('#clearStu').addEventListener('click', async function () {
+  $('#clearRoster').addEventListener('click', async function () {
     if (!state.students.length) { toast('名单已经是空的'); return; }
     if (!confirm('确定要一键清空全部 ' + state.students.length + ' 名学生吗？\n\n积分记录、分组归属将一并移除！')) return;
     if (!confirm('再次确认：清空后无法恢复，确定继续？')) return;
