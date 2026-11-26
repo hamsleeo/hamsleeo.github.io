@@ -1386,8 +1386,24 @@
     mode: MODE,
     getRects: function () { return JSON.parse(JSON.stringify(state.panelRects || {})); },
     getVersion: function () { return +state.layoutVersion || 0; },
-    save: function () { markLayoutEdited(); return +state.layoutVersion || 0; }
+    save: function () { markLayoutEdited(); return +state.layoutVersion || 0; },
+    version: '20261126sync3'
   };
+  // 教师端可主动拉取当前预览布局，避免「完成」通知因 iframe 缓存旧脚本而丢失
+  if (MODE === 'layout' && window.parent && window.parent !== window) {
+    window.addEventListener('message', function (e) {
+      if (!e || !e.data || e.data.type !== 'classScreenRequestLayout') return;
+      if (e.origin && e.origin !== location.origin) return;
+      try {
+        window.parent.postMessage({
+          type: 'classScreenLayoutData',
+          panelRects: state.panelRects,
+          version: +state.layoutVersion || 0
+        }, '*');
+      } catch (err) {}
+    });
+    try { window.parent.postMessage({ type: 'classScreenLayoutReady' }, '*'); } catch (e) {}
+  }
   /* 喊话控制：桌面端/自动化测试可通过 CDP 驱动；桌面端实际走 data-live-shout 轮询 */
   window.ClassScreenShout = {
     show: function (s) { showShout(s); },

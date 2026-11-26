@@ -725,7 +725,7 @@
   /* ---------- 可视化布局：教师端拖板块 → 草稿存本机 → 顶版本号写云端 ---------- */
   var LAYOUT_DRAFT_KEY = 'classScreenLayoutLocal_v1';
   function layoutStatus(text) { var el = $('#layoutStatus'); if (el) el.textContent = text || ''; }
-  function layoutFrameUrl() { return CloudAPI.boardUrl(CloudAPI.getBoardKey()) + '&mode=layout'; }
+  function layoutFrameUrl() { return CloudAPI.boardUrl(CloudAPI.getBoardKey()) + '&mode=layout&v=20261126sync3'; }
   function loadLayoutFrame() {
     var f = $('#layoutFrame'); if (!f) return;
     if (!f.getAttribute('src')) {
@@ -741,15 +741,47 @@
   }
   async function saveLayoutToCloud(incoming) {
     if (!session) { toast('请先登录后台'); return; }
-    // 预览点「✓ 完成」会直接把布局随消息传过来；外层按钮则回退读本机草稿
+    // 预览点「✓ 完成」会直接把布局随消息传过来；外层按钮/草稿监听则回退读本机草稿
     var d = (incoming && incoming.panelRects) ? incoming : readLayoutDraft();
     if (!d || !d.panelRects) { toast('请先在预览里拖动板块并点「✓ 完成」'); return; }
     state.panelRects = d.panelRects;
     // 严格递增：压过云端旧版本、草稿版本和本机时间，确保大屏端一定判定为「云端更新」
     state.layoutVersion = Math.max(+d.version || 0, +state.layoutVersion || 0, Date.now()) + 1;
     var ok = await save();
-    if (ok) layoutStatus('已自动同步 · 大屏约 5 秒内应用新布局');
+    if (ok) {
+      layoutStatus('已自动同步 · 大屏约 5 秒内应用新布局');
+      // 回读确认：版本号确实写进云端才算成功，否则明确提示
+      try {
+        var row = await CloudAPI.loadBoard();
+        var cv = row && row.data ? +row.data.layoutVersion || 0 : 0;
+        if (cv < state.layoutVersion) layoutStatus('保存未生效，请检查网络后重试');
+      } catch (e) {}
+    }
   }
+  function draftSignature(d) {
+    if (!d || !d.panelRects) return '';
+    try { return String(d.ts || d.version || '') + '|' + JSON.stringify(d.panelRects); } catch (e) { return ''; }
+  }
+  // 页面打开时已存在的草稿不自动保存，避免把历史草稿误推上云端
+  var lastDraftSig = draftSignature(readLayoutDraft());
+  var draftSaveTimer = null;
+  var pullTimer = null;
+  // 保险路径①：只要预览把草稿写进 localStorage（任何版本的预览代码都会写），就自动同步云端。
+  // 不依赖 postMessage，避免预览 iframe 用到缓存旧脚本时通知丢失。
+  function watchDraft() {
+    var d = readLayoutDraft();
+    var sig = draftSignature(d);
+    if (!sig) { lastDraftSig = ''; return; }
+    if (sig === lastDraftSig) return;
+    lastDraftSig = sig;
+    if (!session || !d.panelRects) return;
+    clearTimeout(draftSaveTimer);
+    draftSaveTimer = setTimeout(function () {
+      layoutStatus('检测到新布局草稿，正在自动同步…');
+      saveLayoutToCloud({ panelRects: d.panelRects, version: d.version });
+    }, 400);
+  }
+  setInterval(watchDraft, 800);
   function reloadLayoutFrame() {
     var f = $('#layoutFrame'); if (!f) return;
     try { localStorage.removeItem(LAYOUT_DRAFT_KEY); } catch (e) {}
@@ -761,13 +793,28 @@
   if (saveLayoutBtn) saveLayoutBtn.addEventListener('click', saveLayoutToCloud);
   var reloadLayoutBtn = $('#layoutReload');
   if (reloadLayoutBtn) reloadLayoutBtn.addEventListener('click', reloadLayoutFrame);
-  // 子页面（布局预览）点「完成」后，直接把布局写入云端，无需再点外层按钮
-  window.addEventListener('message', function (e) {
-    if (!e || !e.data || e.data.type !== 'classScreenLayoutEdited') return;
+  // 保险路径②：主动向预览请求当前布局并保存，绕开「完成」通知丢失的情况
+  var pullLayoutBtn = $('#layoutPull');
+  if (pullLayoutBtn) pullLayoutBtn.addEventListener('click', function () {
     var f = $('#layoutFrame');
-    if (f && e.source !== f.contentWindow) return;
-    layoutStatus('收到新布局，正在同步到大屏…');
-    saveLayoutToCloud({ panelRects: e.data.panelRects, version: e.data.version });
+    if (!f || !f.contentWindow) { toast('请先切到「板块布局」载入预览'); return; }
+    layoutStatus('正在读取预览里的当前布局…');
+    clearTimeout(pullTimer);
+    pullTimer = setTimeout(function () { layoutStatus('读取超时 · 可点「保存布局到大屏」用草稿补存'); }, 5000);
+    try { f.contentWindow.postMessage({ type: 'classScreenRequestLayout' }, location.origin); } catch (e) {}
+  });
+  // 保险路径③：预览的「完成」消息 / 主动请求响应 / 预览就绪。
+  // 只校验同源，不比较 e.source 与 iframe.contentWindow——iframe 刷新后引用会变化导致误拦截。
+  window.addEventListener('message', function (e) {
+    if (!e || !e.data) return;
+    if (e.origin && e.origin !== location.origin) return;
+    var t = e.data.type;
+    if (t === 'classScreenLayoutReady') { layoutStatus('预览已就绪 · 点右上角「编辑」拖动板块'); return; }
+    if (t === 'classScreenLayoutEdited' || t === 'classScreenLayoutData') {
+      clearTimeout(pullTimer);
+      layoutStatus('收到新布局，正在同步到大屏…');
+      saveLayoutToCloud({ panelRects: e.data.panelRects, version: e.data.version });
+    }
   });
   // 一周课表：星期切换
   var dayTabs = $('#dayTabs');
