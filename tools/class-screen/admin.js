@@ -959,11 +959,14 @@
   // 登录按钮忙碌态：云端接口串行请求期间给出反馈，并防重复点击
   function loginBusy(btn, work) {
     if (!btn || btn.disabled) return;
-    var old = btn.textContent;
-    btn.disabled = true; btn.textContent = '登录中…';
+    var old = btn.innerHTML;
+    btn.disabled = true;
+    btn.classList.add('is-busy');
+    btn.innerHTML = '<span class="btn-spinner"></span><span>登录中…</span>';
+    function restore() { btn.disabled = false; btn.classList.remove('is-busy'); btn.innerHTML = old; }
     Promise.resolve().then(work).then(
-      function () { btn.disabled = false; btn.textContent = old; },
-      function (e) { btn.disabled = false; btn.textContent = old; msg(e.message || '登录失败'); }
+      restore,
+      function (e) { restore(); msg(e.message || '登录失败'); }
     );
   }
   $('#codeLogin').addEventListener('click', function () {
