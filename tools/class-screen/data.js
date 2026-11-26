@@ -138,9 +138,12 @@
         notice: { titleColor: '', titleSize: 0 }, leave: { titleColor: '', titleSize: 0 },
         attention: { titleColor: '', titleSize: 0 }
       },
-      /* 板块行高：大屏 4 行网格各行高度(px)。大屏编辑模式拖拽面板底边调整所在行高度，
-         同一行的模块等高（网格布局特性，保证整齐不破碎）。 */
+      /* 板块行高（旧版网格遗留，保留兼容）：大屏 4 行网格各行高度(px)。 */
       rowHeights: [124, 252, 272, 228],
+      /* 自由布局：每个板块在画布中的矩形，单位是画布宽高的百分比(0~100)。
+         x/y=左上角，w/h=宽高。编辑模式下拖动板块本体移动、拖八角缩放，
+         结果存这里；null 的模块用 defaultPanelRects 兜底。 */
+      panelRects: defaultPanelRects(),
       /* 手机喊话：老师从管理端发送，展示端检测 id 变化后弹层并朗读 */
       shout: { id: '', text: '', from: '班主任', duration: 12, speak: true, voice: 'xiaoxiao', voiceSpeed: 4, createdAt: '' },
       /* schedule 为兼容旧数据的“当日课表”；新数据以 weeklySchedule（周一~周日）为准 */
@@ -210,8 +213,45 @@
     };
   }
 
+  /* 默认自由布局：把原 12列×4行 网格的排布换算成百分比矩形。
+     列: 12 列, gap≈1.1%; 行高按网格默认 136/234/272/284(合计≈926, gap 14)。
+     每行 fill 到 100% 宽，模块按 moduleOrder 里的列跨度依次排布。 */
+  var COLUMN_SPAN = {
+    schedule: 12, current: 3, homework: 5, duty: 2, countdown: 2,
+    overview: 3, fun: 3, groups: 3, models: 3, radar: 2,
+    notice: 3, leave: 3, attention: 4
+  };
+  var ROW_ORDER = [
+    ['schedule'],
+    ['current', 'homework', 'duty', 'countdown'],
+    ['overview', 'fun', 'groups', 'models'],
+    ['radar', 'notice', 'leave', 'attention']
+  ];
+  var ROW_H = [15.2, 26.0, 30.0, 28.8]; // 每行的“格子高度”(含下方空隙)，合计 100
+  function defaultPanelRects() {
+    var rects = {};
+    var GAP = 1.0; // 模块之间的空隙（百分比，横向与纵向一致）
+    ROW_ORDER.forEach(function (row, ri) {
+      var spans = row.map(function (m) { return COLUMN_SPAN[m] || 3; });
+      var total = spans.reduce(function (a, b) { return a + b; }, 0);
+      var gapTotal = GAP * (row.length - 1);
+      var usable = 100 - gapTotal;
+      var x = 0;
+      var y = +ROW_H.slice(0, ri).reduce(function (a, b) { return a + b; }, 0).toFixed(2);
+      var h = +(ROW_H[ri] - GAP).toFixed(2);
+      row.forEach(function (m, i) {
+        var w = +(usable * spans[i] / total).toFixed(2);
+        rects[m] = { x: +x.toFixed(2), y: y, w: w, h: h };
+        x = +(x + w + GAP).toFixed(2);
+      });
+    });
+    return rects;
+  }
+
   global.DEFAULT_STATE = createDefaultState();
   global.createDefaultState = createDefaultState;
+  global.defaultPanelRects = defaultPanelRects;
+  global.COLUMN_SPAN = COLUMN_SPAN;
   global.DEFAULT_PERIODS = createDefaultState().periods;
   global.THEMES = {
     aurora:   { name: '极光青', a: '#16243d', b: '#1d3a48', c: '#2e5b58', accent: '#7fd6c0', accent2: '#ffc97a' },

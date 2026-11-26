@@ -121,32 +121,30 @@ button { cursor: pointer; }
 .top-btn span { color: var(--accent-2); margin-right: 3px; }
 .top-btn.icon-only { font-size: 19px; padding: 5px 11px; }
 
-/* ---------- 网格与卡片 ---------- */
+/* ---------- 自由布局画布与卡片 ---------- */
+/* 画布：position:relative 作为绝对定位板块的参照系，替换原 12列×4行 grid。
+   板块矩形由 app.js 按 state.panelRects（百分比）写成内联 left/top/width/height。 */
 .dashboard-grid {
-  flex: 1; min-height: 0; display: grid; gap: 14px;
-  grid-template-columns: repeat(12, minmax(0, 1fr));
-  grid-template-rows: var(--row-h1, 124px) var(--row-h2, 252px) var(--row-h3, 272px) var(--row-h4, 228px);
+  flex: 1; min-height: 0; position: relative; overflow: hidden;
 }
 .panel {
-  position: relative; min-width: 0; min-height: 0; overflow: hidden;
+  position: absolute; min-width: 0; min-height: 0; overflow: hidden;
   background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius);
   backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
   box-shadow: 0 12px 34px rgba(0,0,0,.20), inset 0 1px rgba(255,255,255,.06);
   display: flex; flex-direction: column;
 }
+/* 未初始化的板块兜底排布（防止 JS 未设置内联坐标时全部叠在左上角） */
+.dashboard-grid .panel:nth-child(1) { left: 0; top: 0; width: 100%; height: 14.7%; }
+.dashboard-grid .panel:nth-child(2) { left: 0; top: 15.2%; width: 25%; height: 25%; }
+.dashboard-grid .panel:nth-child(3) { left: 25.5%; top: 15.2%; width: 41%; height: 25%; }
+.dashboard-grid .panel:nth-child(4) { left: 67%; top: 15.2%; width: 16%; height: 25%; }
+.dashboard-grid .panel:nth-child(5) { left: 83.5%; top: 15.2%; width: 16%; height: 25%; }
+.dashboard-grid .panel:nth-child(n+6) { left: 0; top: 41%; width: 24%; height: 29%; }
 .panel::before {
   content: ""; position: absolute; left: 16px; right: 16px; top: 0; height: 1px;
   background: linear-gradient(90deg, transparent, rgba(255,255,255,.35), transparent);
 }
-[data-module="schedule"] { grid-column: span 12; }
-[data-module="current"] { grid-column: span 3; }
-[data-module="homework"] { grid-column: span 5; }
-[data-module="duty"] { grid-column: span 2; }
-[data-module="countdown"] { grid-column: span 2; }
-[data-module="overview"], [data-module="fun"], [data-module="groups"], [data-module="models"] { grid-column: span 3; }
-[data-module="radar"] { grid-column: span 2; }
-[data-module="notice"], [data-module="leave"] { grid-column: span 3; }
-[data-module="attention"] { grid-column: span 4; }
 .panel.hidden { display: none; }
 .panel-head {
   height: 42px; flex: none; display: flex; align-items: center; gap: 8px;
@@ -282,23 +280,33 @@ button { cursor: pointer; }
 .log-delta { margin-left: auto; flex: none; font-weight: 700; font-variant-numeric: tabular-nums; }
 .log-delta.plus { color: var(--positive); } .log-delta.minus { color: var(--negative); }
 
-/* ---------- 编辑模式 ---------- */
+/* ---------- 编辑模式（自由布局） ---------- */
 #screen.editing .panel { outline: 1px dashed rgba(127,214,192,.55); outline-offset: -4px; }
-#screen.editing .dashboard-grid .panel { cursor: grab; }
-#screen.editing .dashboard-grid .panel.dragging { opacity: .4; }
-#screen.editing .dashboard-grid .panel.drag-over { outline: 2px solid var(--accent-2); }
-/* 编辑模式：面板底边拖拽手柄（调整所在网格行高度） */
-.resize-handle {
-  display: none; position: absolute; left: 50%; bottom: 0; transform: translateX(-50%);
-  width: 88px; height: 16px; z-index: 12; cursor: ns-resize; touch-action: none;
-  align-items: center; justify-content: center;
+#screen.editing .panel:hover { outline: 2px solid var(--accent-2); }
+/* 拖动板块本体移动位置 */
+#screen.editing .dashboard-grid .panel { cursor: move; }
+#screen.editing .dashboard-grid .panel.dragging { opacity: .55; z-index: 20; }
+/* 八角缩放手柄：四角 + 四边中点，编辑态才显示 */
+.rz {
+  display: none; position: absolute; z-index: 22; touch-action: none;
+  background: var(--accent-2); border: 1px solid rgba(0,0,0,.25); border-radius: 3px;
+  box-shadow: 0 0 8px rgba(255,201,122,.7);
 }
-#screen.editing .resize-handle { display: flex; }
-.resize-handle::after {
-  content: ""; width: 62px; height: 5px; border-radius: 5px;
-  background: var(--accent-2); opacity: .85; box-shadow: 0 0 10px var(--accent-2);
-}
-.resize-handle:hover::after { opacity: 1; height: 7px; }
+#screen.editing .rz { display: block; }
+.rz[data-dir="nw"], .rz[data-dir="se"] { width: 18px; height: 18px; cursor: nwse-resize; }
+.rz[data-dir="ne"], .rz[data-dir="sw"] { width: 18px; height: 18px; cursor: nesw-resize; }
+.rz[data-dir="n"], .rz[data-dir="s"] { height: 10px; left: 22px; right: 22px; cursor: ns-resize; }
+.rz[data-dir="w"], .rz[data-dir="e"] { width: 10px; top: 22px; bottom: 22px; cursor: ew-resize; }
+.rz[data-dir="nw"] { left: -9px; top: -9px; }
+.rz[data-dir="n"]  { top: -5px; }
+.rz[data-dir="ne"] { right: -9px; top: -9px; }
+.rz[data-dir="e"]  { right: -5px; }
+.rz[data-dir="se"] { right: -9px; bottom: -9px; }
+.rz[data-dir="s"]  { bottom: -5px; }
+.rz[data-dir="sw"] { left: -9px; bottom: -9px; }
+.rz[data-dir="w"]  { left: -5px; }
+/* 编辑态提示条 */
+.layout-hint { color: var(--accent-2); }
 /* 标题样式由管理端配置，通过内联样式作用到 .panel-head h2（这里无需额外规则） */
 .edit-toolbar {
   position: absolute; left: 50%; top: 14px; transform: translateX(-50%) translateY(-130px);
@@ -606,11 +614,6 @@ body.mode-display .head-action-btn { display: none !important; }
    上端各行各回收一点高度，末行最小高度提高；底部留白同步收窄。 */
 .stage { gap: 14px; padding: 18px 20px 14px 6px; }
 
-.dashboard-grid {
-  gap: 16px;
-  grid-template-rows: 112px 246px 258px minmax(280px, 1fr);
-}
-
 .panel-head { height: 48px; }
 
 /* 内容区左右留白加大，文字不再贴着面板边框 */
@@ -625,10 +628,6 @@ body.mode-display .head-action-btn { display: none !important; }
    ============================================================ */
 .topbar { height: 58px; }
 .stage { gap: 10px; padding: 14px 20px 10px 6px; }
-.dashboard-grid {
-  gap: 14px;
-  grid-template-rows: 136px 234px 272px minmax(284px, 1fr);
-}
 
 /* 今日课表：卡片原本需要 110px，压缩卡片留白后可在首行完整显示 */
 .schedule-strip { padding-top: 6px; padding-bottom: 6px; }

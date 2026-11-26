@@ -2,6 +2,7 @@
 (function () {
   'use strict';
   var KEY = 'classScreenState_v1';
+  var LAYOUT_KEY = 'classScreenLayoutLocal_v1'; // 本机布局覆盖：教室端拖拽的尺寸/位置优先于云端
   var screen = document.getElementById('screen');
   var grid = document.getElementById('dashboardGrid');
   var MODE = new URLSearchParams(location.search).get('mode') === 'admin' ? 'admin' : 'display';
@@ -47,6 +48,12 @@
     }
     if (!st.leaves) st.leaves = [];
     if (st.termStart == null) st.termStart = '';
+    // 自由布局：老数据没有 panelRects 时用默认矩形补齐每个模块
+    if (!st.panelRects || typeof st.panelRects !== 'object') st.panelRects = window.defaultPanelRects ? window.defaultPanelRects() : {};
+    else {
+      var dflt = window.defaultPanelRects ? window.defaultPanelRects() : {};
+      Object.keys(dflt).forEach(function (m) { if (!st.panelRects[m]) st.panelRects[m] = dflt[m]; });
+    }
     if (st.moduleOrder && st.moduleOrder.indexOf('leave') < 0) {
       var i = st.moduleOrder.indexOf('attention');
       st.moduleOrder.splice(i >= 0 ? i : st.moduleOrder.length, 0, 'leave');
@@ -80,9 +87,26 @@
   }
   function save() {
     try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) { /* 隐私模式忽略 */ }
+    // 自由布局单独落地：教室端（display）也能持久保存，且不被云端轮询覆盖
+    try {
+      if (state.panelRects) {
+        localStorage.setItem(LAYOUT_KEY, JSON.stringify({ panelRects: state.panelRects, ts: Date.now() }));
+      }
+    } catch (e) { /* 忽略 */ }
     if (!cloudReady || MODE !== 'admin') return;
     clearTimeout(saveTimer);
     saveTimer = setTimeout(saveNow, 600);
+  }
+  // 云端数据合并后，用本机布局覆盖（教室端拖拽过的板块尺寸/位置优先）
+  function applyLocalLayoutOverride() {
+    try {
+      var raw = localStorage.getItem(LAYOUT_KEY);
+      if (!raw) return;
+      var local = JSON.parse(raw);
+      if (local && local.panelRects && typeof local.panelRects === 'object') {
+        state.panelRects = deepMerge(window.defaultPanelRects ? window.defaultPanelRects() : {}, local.panelRects);
+      }
+    } catch (e) { /* 忽略 */ }
   }
   function setSync(text) {
     var el = document.getElementById('syncStatus');
@@ -132,13 +156,23 @@
     var w = WALLPAPERS[state.wallpaper] || WALLPAPERS.gradient;
     screen.style.setProperty('--wall-image', w.css);
   }
-  /* 行高：由管理端配置 / 前端拖拽调整，写入 grid 的 4 个行变量 */
-  function applyRowHeights() {
-    var rh = state.rowHeights || [124, 252, 272, 228];
-    for (var i = 0; i < 4; i++) {
-      var h = +rh[i] || [124, 252, 272, 228][i];
-      screen.style.setProperty('--row-h' + (i + 1), h + 'px');
-    }
+  /* 自由布局：把每个板块的矩形(百分比)写成内联样式。
+     画布是 dashboard-grid，left/top/width/height 都相对它计算。 */
+  function applyPanelRects() {
+    var rects = state.panelRects || {};
+    $$('.panel').forEach(function (panel) {
+      var m = panel.dataset.module;
+      var r = rects[m];
+      if (!r) return;
+      var x = Math.max(0, Math.min(99, +r.x || 0));
+      var y = Math.max(0, Math.min(99, +r.y || 0));
+      var w = Math.max(3, Math.min(100 - x, +r.w || 25));
+      var h = Math.max(3, Math.min(100 - y, +r.h || 25));
+      panel.style.left = x + '%';
+      panel.style.top = y + '%';
+      panel.style.width = w + '%';
+      panel.style.height = h + '%';
+    });
   }
   /* 板块标题样式：管理端为每个模块设置的标题颜色/字号 */
   function applyModuleStyles() {
@@ -418,7 +452,7 @@
     renderShell(); renderSchedule(); renderCurrent(); renderHomework(); renderDuty(); renderCountdown();
     renderOverview(); renderRadar(); renderGroups(); renderModels(); renderFun(); renderNotice(); renderLeave(); renderAttention();
     setupEditActions();
-    applyTheme(); applyLayout(); applyRowHeights(); applyModuleStyles();
+    applyTheme(); applyLayout(); applyPanelRects(); applyModuleStyles();
     applyModuleVisibility();
     renderToggles(); renderThemeChoices(); renderStudentPicker(); renderDimTabs(); renderBehaviors(); renderRecentLog();
   }
@@ -475,14 +509,17 @@
       var actions = $('.head-actions', panel);
       // 显隐统一由管理端「板块布局」控制，前端不再提供隐藏按钮，避免教室内误操作
       actions.innerHTML = '<button class="head-action-btn" data-gear="' + panel.dataset.module + '" title="配置模块">⚙</button>';
-      // 底边拖拽手柄：编辑模式下调整所在网格行高度
-      if (!$('.resize-handle', panel)) {
-        var handle = document.createElement('div');
-        handle.className = 'resize-handle';
-        handle.dataset.resizeRow = panel.dataset.module;
-        handle.title = '拖动调整本行高度';
-        panel.appendChild(handle);
-      }
+      // 八角缩放手柄：编辑模式下拖动改板块自身矩形（n/nw/ne/w/e/sw/s/se）
+      var dirs = ['nw', 'n', 'ne', 'e', 'se', 's', 'sw', 'w'];
+      dirs.forEach(function (d) {
+        var h = $('.rz[data-dir="' + d + '"]', panel);
+        if (!h) {
+          h = document.createElement('div');
+          h.className = 'rz';
+          h.dataset.dir = d;
+          panel.appendChild(h);
+        }
+      });
     });
     // 显隐已移至管理端：隐藏前端设置抽屉里的"显示模块"区与工具栏的"添加模块"按钮
     var mt = $('#moduleToggles');
@@ -500,7 +537,7 @@
   function enterEdit() {
     ui.editing = true;
     screen.classList.add('editing');
-    $$('.panel').forEach(function (p) { p.draggable = true; });
+    $$('.panel').forEach(function (p) { p.draggable = false; });
     $('#btnEdit').innerHTML = '<span>✓</span> 完成';
     openDrawer('settingsDrawer');
     switchSettingsTab('layout');
@@ -508,7 +545,6 @@
   function exitEdit() {
     ui.editing = false;
     screen.classList.remove('editing');
-    $$('.panel').forEach(function (p) { p.draggable = false; });
     $('#btnEdit').innerHTML = '<span>✎</span> 编辑';
     closeDrawers();
     save();
@@ -519,90 +555,78 @@
     $$('.dtab-pane').forEach(function (p) { p.classList.toggle('active', p.dataset.pane === tab); });
   }
 
-  var dragModule = null;
-  grid.addEventListener('dragstart', function (e) {
-    if (!ui.editing) { e.preventDefault(); return; }
-    var p = e.target.closest('.panel'); if (!p) return;
-    dragModule = p.dataset.module;
-    p.classList.add('dragging');
-    e.dataTransfer.effectAllowed = 'move';
-    try { e.dataTransfer.setData('text/plain', dragModule); } catch (err) {}
-  });
-  grid.addEventListener('dragover', function (e) {
-    if (!ui.editing || !dragModule) return;
-    var p = e.target.closest('.panel');
-    if (p && p.dataset.module !== dragModule) { e.preventDefault(); p.classList.add('drag-over'); }
-  });
-  grid.addEventListener('dragleave', function (e) {
-    var p = e.target.closest('.panel'); if (p) p.classList.remove('drag-over');
-  });
-  grid.addEventListener('drop', function (e) {
-    if (!ui.editing || !dragModule) return;
-    var target = e.target.closest('.panel');
-    if (!target || target.dataset.module === dragModule) return;
-    e.preventDefault();
-    $$('.panel').forEach(function (p) { p.classList.remove('drag-over', 'dragging'); });
-    var from = dragModule, to = target.dataset.module;
-    var fi = state.moduleOrder.indexOf(from), ti = state.moduleOrder.indexOf(to);
-    state.moduleOrder.splice(fi, 1); state.moduleOrder.splice(ti, 0, from);
-    // 按新顺序重排 DOM
-    state.moduleOrder.forEach(function (m) {
-      var p = $('.panel[data-module="' + m + '"]'); if (p) grid.appendChild(p);
-    });
-    dragModule = null;
-    save();
-  });
-  grid.addEventListener('dragend', function () {
-    $$('.panel').forEach(function (p) { p.classList.remove('dragging', 'drag-over'); });
-    dragModule = null;
-  });
-
-  /* ---- 编辑模式：拖拽面板底边手柄，调整所在网格行高度 ---- */
-  // 用可见 panel 的 offsetTop 判断行号（同行 panel 的 offsetTop 相同），避免依赖静态映射
-  function rowIndexOf(panel) {
-    var tops = [];
-    $$('.panel').forEach(function (p) {
-      if (p.classList.contains('hidden')) return;
-      var t = Math.round(p.offsetTop);
-      if (tops.indexOf(t) < 0) tops.push(t);
-    });
-    tops.sort(function (a, b) { return a - b; });
-    return tops.indexOf(Math.round(panel.offsetTop));
+  /* ---- 编辑模式：自由移动 + 八角缩放 ---- */
+  // 画布百分比坐标：把屏幕像素位移换算成相对画布宽高的百分比（已含 transform scale）
+  function canvasScale() {
+    var rect = grid.getBoundingClientRect();
+    return { px: rect.width / 100, py: rect.height / 100 };
   }
-  var resizeState = null;
+  function clampRect(r) {
+    var MINW = 6, MINH = 5; // 最小宽高(百分比)
+    r.w = Math.max(MINW, Math.min(100 - r.x, r.w));
+    r.h = Math.max(MINH, Math.min(100 - r.y, r.h));
+    r.x = Math.max(0, Math.min(100 - r.w, r.x));
+    r.y = Math.max(0, Math.min(100 - r.h, r.y));
+    return r;
+  }
+  function writeRect(panel, r) {
+    panel.style.left = r.x + '%'; panel.style.top = r.y + '%';
+    panel.style.width = r.w + '%'; panel.style.height = r.h + '%';
+  }
+  var moveState = null; // {panel, module, startX, startY, rect, sc, kind:'move'|'resize', dir}
   grid.addEventListener('pointerdown', function (e) {
-    if (!ui.editing) return;
-    var handle = e.target.closest('.resize-handle');
-    if (!handle) return;
-    var panel = handle.closest('.panel');
+    if (!ui.editing || e.button !== 0) return;
+    var panel = e.target.closest('.panel');
     if (!panel) return;
+    // 避开按钮/齿轮/手柄点击：点配置按钮不触发拖动
+    if (e.target.closest('button, .head-action-btn')) return;
+    var handle = e.target.closest('.rz');
+    var kind = handle ? 'resize' : 'move';
+    // 点面板标题或空白处都可以拖动；点输入/滚动内容时不拖（编辑态一般不填内容）
+    var r0 = (state.panelRects || {})[panel.dataset.module];
+    if (!r0) return;
+    var sc = canvasScale();
+    moveState = {
+      panel: panel, module: panel.dataset.module,
+      startX: e.clientX, startY: e.clientY,
+      rect: { x: +r0.x, y: +r0.y, w: +r0.w, h: +r0.h },
+      sc: sc, kind: kind, dir: handle ? handle.dataset.dir : ''
+    };
+    panel.classList.add('dragging');
     e.preventDefault();
-    e.stopPropagation();
-    var row = rowIndexOf(panel);
-    if (row < 0) return;
-    var rh = state.rowHeights || [124, 252, 272, 228];
-    var sm = (screen.style.transform || '').match(/scale\(([\d.]+)\)/);
-    var scale = sm ? (+sm[1] || 1) : 1;
-    resizeState = { row: row, startY: e.clientY, startH: +rh[row] || 124, scale: scale };
-    try { handle.setPointerCapture(e.pointerId); } catch (err) {}
   });
   grid.addEventListener('pointermove', function (e) {
-    if (!resizeState) return;
-    var delta = (e.clientY - resizeState.startY) / resizeState.scale;
-    var h = Math.max(70, Math.min(560, Math.round(resizeState.startH + delta)));
-    var rh = (state.rowHeights || [124, 252, 272, 228]).slice();
-    rh[resizeState.row] = h;
-    state.rowHeights = rh;
-    screen.style.setProperty('--row-h' + (resizeState.row + 1), h + 'px');
+    if (!moveState || !ui.editing) return;
+    var dx = (e.clientX - moveState.startX) / moveState.sc.px;
+    var dy = (e.clientY - moveState.startY) / moveState.sc.py;
+    var r = { x: moveState.rect.x, y: moveState.rect.y, w: moveState.rect.w, h: moveState.rect.h };
+    if (moveState.kind === 'move') {
+      r.x += dx; r.y += dy;
+    } else {
+      var d = moveState.dir;
+      // 每边可独立拖动；拖动左边/上边时同时改变 x/y 与 w/h
+      if (d.indexOf('w') >= 0) { var nx = Math.max(0, Math.min(r.x + r.w - 6, r.x + dx)); r.w += r.x - nx; r.x = nx; }
+      if (d.indexOf('e') >= 0) { r.w = Math.max(6, Math.min(100 - r.x, r.w + dx)); }
+      if (d.indexOf('n') >= 0) { var ny = Math.max(0, Math.min(r.y + r.h - 5, r.y + dy)); r.h += r.y - ny; r.y = ny; }
+      if (d.indexOf('s') >= 0) { r.h = Math.max(5, Math.min(100 - r.y, r.h + dy)); }
+    }
+    clampRect(r);
+    writeRect(moveState.panel, r);
+    state.panelRects[moveState.module] = { x: +r.x.toFixed(2), y: +r.y.toFixed(2), w: +r.w.toFixed(2), h: +r.h.toFixed(2) };
     e.preventDefault();
   });
-  function endResize(e) {
-    if (!resizeState) return;
-    resizeState = null;
+  function endMove(e) {
+    if (!moveState) return;
+    moveState.panel.classList.remove('dragging');
+    var wasDragging = moveState;
+    moveState = null;
+    if (wasDragging.panel.hasPointerCapture && e && e.pointerId != null) {
+      try { wasDragging.panel.releasePointerCapture(e.pointerId); } catch (err) {}
+    }
     save();
   }
-  grid.addEventListener('pointerup', endResize);
-  grid.addEventListener('pointercancel', endResize);
+  grid.addEventListener('pointerup', endMove);
+  grid.addEventListener('pointercancel', endMove);
 
   /* ---------------- 模块配置弹窗 ---------------- */
   var MODAL_CONFIG = {
@@ -780,6 +804,15 @@
   /* ---------------- 事件绑定 ---------------- */
   $('#btnEdit').addEventListener('click', function () { ui.editing ? exitEdit() : enterEdit(); });
   $('#btnSaveEdit').addEventListener('click', exitEdit);
+  // 重置布局：所有板块回到默认矩形（不影响课程内容/标题样式）
+  var resetLayoutBtn = $('#btnResetLayout');
+  if (resetLayoutBtn) resetLayoutBtn.addEventListener('click', function () {
+    if (!confirm('确定把板块位置与大小恢复默认？（不影响课程、积分、标题样式等数据）')) return;
+    state.panelRects = window.defaultPanelRects ? window.defaultPanelRects() : {};
+    applyPanelRects();
+    save();
+    toast('布局已恢复默认');
+  });
   $('#btnFull').addEventListener('click', function () {
     if (document.fullscreenElement) document.exitFullscreen();
     else if (screen.requestFullscreen) screen.requestFullscreen().catch(function () {});
@@ -938,7 +971,7 @@
   function applyChrome() {
     document.body.classList.add(MODE === 'admin' ? 'mode-admin' : 'mode-display');
     if (MODE === 'display') {
-      $('#btnEdit').style.display = 'none';
+      // 编辑按钮保留：班主任需要在教室大屏上直接拖动板块调整自由布局
       $('#btnScore').style.display = 'none';
       $('#editToolbar').style.display = 'none';
       var rail = $('#deskIcons');
@@ -1140,6 +1173,7 @@
       var row = await CloudAPI.loadBoard();
       if (row && row.data && Object.keys(row.data).length) {
         state = normalizeState(deepMerge(createDefaultState(), row.data));
+        applyLocalLayoutOverride(); // 本机布局优先，避免教室端拖拽被 5 秒轮询覆盖
         syncSettingsInputs();
         renderAll();
         setSync('云端已同步 · ' + (row.updated_at ? new Date(row.updated_at).toLocaleString('zh-CN', { hour12: false }) : ''));
