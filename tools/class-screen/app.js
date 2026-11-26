@@ -539,6 +539,9 @@
     screen.classList.add('editing');
     $$('.panel').forEach(function (p) { p.draggable = false; });
     $('#btnEdit').innerHTML = '<span>✓</span> 完成';
+    // 展示模式 applyChrome() 把工具条隐藏了，进编辑态要恢复，否则「重置布局」按钮用不了
+    var bar = $('#editToolbar');
+    if (bar) bar.style.display = '';
     openDrawer('settingsDrawer');
     switchSettingsTab('layout');
   }
@@ -547,6 +550,8 @@
     screen.classList.remove('editing');
     $('#btnEdit').innerHTML = '<span>✎</span> 编辑';
     closeDrawers();
+    // 展示模式下编辑工具条默认隐藏，退出编辑态收回（管理模式保持可见）
+    if (MODE === 'display') { var bar = $('#editToolbar'); if (bar) bar.style.display = 'none'; }
     save();
     toast('布局已保存');
   }
@@ -973,7 +978,8 @@
     if (MODE === 'display') {
       // 编辑按钮保留：班主任需要在教室大屏上直接拖动板块调整自由布局
       $('#btnScore').style.display = 'none';
-      $('#editToolbar').style.display = 'none';
+      // 编辑工具条不用 display:none 隐藏：CSS 已用 transform 在非编辑态滑出屏幕，
+      // 若这里设为 none，进编辑态后「重置布局」按钮将无法出现。
       var rail = $('#deskIcons');
       if (rail) rail.style.display = 'none';
     } else {
