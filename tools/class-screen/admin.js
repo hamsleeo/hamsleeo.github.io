@@ -228,7 +228,7 @@
     set('models', state.models.map(function (m) { return [m.name, m.role, m.score, m.emoji].join('|'); }).join('\n'));
     set('fun', state.fun.map(function (f) { return [f.subject, f.title, f.total, f.done, f.unfinished].join('|'); }).join('\n'));
     renderPeriods();
-    renderChips(); renderModuleStyles(); renderShout(); renderHome();
+    renderChips(); renderModuleStyles(); renderShout(); renderShoutStyle(); renderHome();
   }
 
   /* ---------- 保存 / 读取 ---------- */
@@ -297,6 +297,49 @@
       return '<div class="h-row"><span class="h-time">' + esc(h.time || '') + '</span><span>' + esc(h.text || '') + '</span></div>';
     }).join('') : '<div class="empty">还没有喊话记录</div>';
   }
+  /* ---------- 喊话弹窗样式（模板 + 背景色） ---------- */
+  var SHOUT_PRESET_COLORS = ['#103f34', '#8a1c1c', '#123a63', '#eef7f2', '#3d2f18', '#4a2c70', '#1f1f1f', '#fdf3e3'];
+  function renderShoutStyle() {
+    if (!state.shoutStyle || typeof state.shoutStyle !== 'object') state.shoutStyle = { template: 'classic', bgColor: '' };
+    var tplBox = $('#shoutTpls');
+    if (tplBox && !tplBox.dataset.done) {
+      tplBox.innerHTML = Object.keys(window.SHOUT_TEMPLATES).map(function (k) {
+        var t = window.SHOUT_TEMPLATES[k];
+        return '<button type="button" class="tpl-chip" data-tpl="' + k + '">' +
+          '<span class="tpl-dot" style="background:' + t.bg + '"></span>' +
+          '<span><b>' + t.name + '</b><small>' + t.desc + '</small></span></button>';
+      }).join('');
+      tplBox.dataset.done = '1';
+    }
+    var colorBox = $('#shoutColors');
+    if (colorBox && !colorBox.dataset.done) {
+      colorBox.innerHTML = SHOUT_PRESET_COLORS.map(function (c) {
+        return '<button type="button" class="color-dot" data-color="' + c + '" title="' + c + '" style="background:' + c + '"></button>';
+      }).join('');
+      colorBox.dataset.done = '1';
+    }
+    syncShoutStyleUI();
+  }
+  function syncShoutStyleUI() {
+    var cfg = state.shoutStyle;
+    $$('.tpl-chip').forEach(function (b) { b.classList.toggle('active', b.dataset.tpl === cfg.template); });
+    $$('.color-dot').forEach(function (b) { b.classList.toggle('active', (b.dataset.color || '').toLowerCase() === (cfg.bgColor || '').toLowerCase()); });
+    var picker = $('#shoutBgColor');
+    if (picker) picker.value = cfg.bgColor || (window.SHOUT_TEMPLATES[cfg.template] || window.SHOUT_TEMPLATES.classic).bg;
+    var cur = $('#shoutStyleCur');
+    if (cur) {
+      var s = window.resolveShoutStyle ? window.resolveShoutStyle(state) : null;
+      cur.textContent = '当前：' + (s ? s.name : cfg.template) + (cfg.bgColor ? ' · 自定义色 ' + cfg.bgColor : ' · 模板默认色');
+    }
+  }
+  async function saveShoutStyle() {
+    try {
+      await CloudAPI.saveBoard(state, session);
+      sync('喊话样式已保存 · ' + new Date().toLocaleTimeString('zh-CN', { hour12: false }));
+      toast('样式已保存，下次喊话生效');
+    } catch (e) { toast('保存失败：' + e.message); }
+  }
+
   async function sendShoutText(text, opts) {
     text = (text || '').trim();
     if (!text) { toast('请先输入喊话内容'); return false; }
@@ -931,6 +974,27 @@
     $('#shoutText').value = b.dataset.quick; $('#shoutCount').textContent = b.dataset.quick.length;
   });
   $('#shoutSend').addEventListener('click', sendShout);
+  // 喊话样式：模板切换 / 预设色 / 自定义色 / 保存
+  var tplBoxEl = $('#shoutTpls');
+  if (tplBoxEl) tplBoxEl.addEventListener('click', function (e) {
+    var b = e.target.closest('[data-tpl]'); if (!b) return;
+    state.shoutStyle.template = b.dataset.tpl;
+    state.shoutStyle.bgColor = ''; // 换模板回到模板默认色，避免上一个模板的颜色串味
+    syncShoutStyleUI();
+  });
+  var colorBoxEl = $('#shoutColors');
+  if (colorBoxEl) colorBoxEl.addEventListener('click', function (e) {
+    var b = e.target.closest('[data-color]'); if (!b) return;
+    state.shoutStyle.bgColor = b.dataset.color;
+    syncShoutStyleUI();
+  });
+  var bgPicker = $('#shoutBgColor');
+  if (bgPicker) bgPicker.addEventListener('input', function () {
+    state.shoutStyle.bgColor = this.value;
+    syncShoutStyleUI();
+  });
+  var styleSaveBtn = $('#shoutStyleSave');
+  if (styleSaveBtn) styleSaveBtn.addEventListener('click', saveShoutStyle);
 
   // 点评
   $('#searchStu').addEventListener('input', renderStudents);

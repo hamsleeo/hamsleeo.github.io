@@ -48,6 +48,10 @@
     }
     if (!st.leaves) st.leaves = [];
     if (st.termStart == null) st.termStart = '';
+    // 喊话样式：老数据补默认模板（背景色留空=用模板默认）
+    if (!st.shoutStyle || typeof st.shoutStyle !== 'object') st.shoutStyle = { template: 'classic', bgColor: '' };
+    if (!st.shoutStyle.template) st.shoutStyle.template = 'classic';
+    if (st.shoutStyle.bgColor == null) st.shoutStyle.bgColor = '';
     // 自由布局：老数据没有 panelRects 时用默认矩形补齐每个模块
     if (!st.panelRects || typeof st.panelRects !== 'object') st.panelRects = window.defaultPanelRects ? window.defaultPanelRects() : {};
     else {
@@ -1094,6 +1098,21 @@
     try { if (document.body) document.body.removeAttribute('data-live-shout'); } catch (e) {}
     stopSpeech();
   }
+  /* 把当前 shoutStyle 应用到网页喊话蒙版，返回解析好的样式（桌面端也要用） */
+  function applyShoutStyleToOverlay() {
+    var overlay = $('#shoutOverlay');
+    var shoutStyle = window.resolveShoutStyle ? window.resolveShoutStyle(state) : null;
+    if (overlay && shoutStyle) {
+      overlay.setAttribute('data-template', shoutStyle.template);
+      overlay.style.setProperty('--shout-bg', shoutStyle.bg);
+      overlay.style.setProperty('--shout-fg', shoutStyle.fg);
+      overlay.style.setProperty('--shout-accent', shoutStyle.accent);
+      overlay.style.setProperty('--shout-size', shoutStyle.size + 'px');
+      var iconEl = document.getElementById('shoutIcon');
+      if (iconEl) iconEl.textContent = shoutStyle.icon;
+    }
+    return shoutStyle;
+  }
   function showShout(s) {
     var text = (s && s.text || '').trim();
     if (!text) return;
@@ -1106,6 +1125,9 @@
     textEl.textContent = text;
     if (fromEl) fromEl.textContent = (s.from || '班主任') + ' · ' + ((s.createdAt && new Date(s.createdAt).toTimeString().slice(0, 5)) || new Date().toTimeString().slice(0, 5));
     hideShout();
+    // 班主任在后台选的模板与背景色：网页蒙版用 CSS 变量应用，
+    // 同时把解析好的样式塞进 data-live-shout 让桌面置顶蒙版照着画。
+    var shoutStyle = applyShoutStyleToOverlay();
     overlay.classList.add('show');
     // 暴露实时喊话状态给桌面端 CDP 读取。网页蒙版在浏览器窗口内无法置顶于
     // 其他软件之上；桌面控制台读到这里后弹 TopMost 蒙版，保证喊话总被看到。
@@ -1117,7 +1139,8 @@
         text: text,
         from: s.from || '班主任',
         duration: duration,
-        startedAt: Date.now()
+        startedAt: Date.now(),
+        style: shoutStyle
       }));
     } catch (e) {}
     var hideMs = duration * 1000;
@@ -1312,6 +1335,19 @@
     stop: rollStop,
     hide: rollHide,
     version: '20261126roll1'
+  };
+  /* 喊话控制：桌面端/自动化测试可通过 CDP 驱动；桌面端实际走 data-live-shout 轮询 */
+  window.ClassScreenShout = {
+    show: function (s) { showShout(s); },
+    hide: hideShout,
+    setStyle: function (cfg) {
+      state.shoutStyle = state.shoutStyle || {};
+      if (cfg && cfg.template) state.shoutStyle.template = cfg.template;
+      if (cfg && cfg.bgColor != null) state.shoutStyle.bgColor = cfg.bgColor;
+      return applyShoutStyleToOverlay();
+    },
+    getStyle: function () { return window.resolveShoutStyle ? window.resolveShoutStyle(state) : null; },
+    version: '20261126shout1'
   };
 
   setupEditActions();

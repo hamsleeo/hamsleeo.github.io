@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>班级管理 · 班务大屏</title>
-  <link rel="stylesheet" href="admin.css?v=20261126free2" />
+  <link rel="stylesheet" href="admin.css?v=20261126shout1" />
 </head>
 <body>
   <!-- 登录 -->
@@ -188,6 +188,21 @@
                 <select id="shoutSpeed"><option value="3">舒缓</option><option value="4" selected>标准</option><option value="5">轻快</option></select>
               </label>
               <label class="opt check-opt"><input type="checkbox" id="shoutSpeak" checked /> 语音朗读</label>
+            </div>
+            <div class="shout-style-block">
+              <div class="field-label">弹窗样式 <span class="counter">选模板 + 背景色</span></div>
+              <div class="shout-tpls" id="shoutTpls"></div>
+              <div class="shout-color-row">
+                <div class="shout-colors" id="shoutColors"></div>
+                <label class="shout-custom-color" title="自定义背景色">自定义
+                  <input type="color" id="shoutBgColor" value="#103f34" />
+                </label>
+              </div>
+              <div class="shout-style-foot">
+                <span id="shoutStyleCur">当前样式</span>
+                <button type="button" class="style-save" id="shoutStyleSave">保存样式</button>
+              </div>
+              <p class="tip">模板决定弹窗排版与图标；背景色可自由选（文字会自动变黑/白保证看得清）。保存后下次喊话生效。</p>
             </div>
             <button class="primary shout-send" id="shoutSend">立即喊话到大屏</button>
             <p class="tip">使用微软在线真人音色（导航播报同款，大屏为 Edge 浏览器效果最佳，需联网）；只播放所选音色，不再叠加其他声音，网络异常时保持安静。</p>
@@ -550,7 +565,7 @@
   <script src="vendor/xlsx.full.min.js?v=20261126a"></script>
   <script src="cloud-config.js?v=20261124w3"></script>
   <script src="cloud.js?v=20261124name1"></script>
-  <script src="data.js?v=20261126free2"></script>
-  <script src="admin.js?v=20261126free2"></script>
+  <script src="data.js?v=20261126shout1"></script>
+  <script src="admin.js?v=20261126shout1"></script>
 </body>
 </html>

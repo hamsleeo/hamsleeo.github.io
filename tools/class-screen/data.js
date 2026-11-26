@@ -146,6 +146,9 @@
       panelRects: defaultPanelRects(),
       /* 手机喊话：老师从管理端发送，展示端检测 id 变化后弹层并朗读 */
       shout: { id: '', text: '', from: '班主任', duration: 12, speak: true, voice: 'xiaoxiao', voiceSpeed: 4, createdAt: '' },
+      /* 喊话蒙版样式：班主任在后台「教室喊话」页选模板 + 背景色。
+         template=模板 key，bgColor=自定义背景色(#rrggbb，空=用模板默认)。 */
+      shoutStyle: { template: 'classic', bgColor: '' },
       /* schedule 为兼容旧数据的“当日课表”；新数据以 weeklySchedule（周一~周日）为准 */
       schedule: baseSchedule,
       weeklySchedule: weeklySchedule,
@@ -248,6 +251,29 @@
     return rects;
   }
 
+  /* 喊话蒙版模板：班主后台可选。size 为大字字号，accent 为进度条/标题色。 */
+  global.SHOUT_TEMPLATES = {
+    classic: { name: '经典墨绿', desc: '大屏原版 · 沉稳清晰', icon: '📢', bg: '#103f34', fg: '#f2fff8', accent: '#5ddc9e', accentLight: '#0f6e56', size: 64 },
+    banner:  { name: '醒目横幅', desc: '大字横幅 · 紧急通知', icon: '📣', bg: '#8a1c1c', fg: '#fff6e8', accent: '#ffcf6a', accentLight: '#993c1d', size: 78 },
+    blue:    { name: '沉稳蓝调', desc: '蓝色主题 · 正式场合', icon: '💡', bg: '#123a63', fg: '#eaf4ff', accent: '#7cc4ff', accentLight: '#185fa5', size: 64 },
+    fresh:   { name: '清新浅色', desc: '浅底深字 · 柔和不刺眼', icon: '🌿', bg: '#eef7f2', fg: '#173d31', accent: '#1d9e75', accentLight: '#0f6e56', size: 64 },
+    gold:    { name: '荣耀金辉', desc: '金色调 · 表扬表彰', icon: '⭐', bg: '#3d2f18', fg: '#fff6dd', accent: '#e8c979', accentLight: '#854f0b', size: 66 }
+  };
+  /* 把 state.shoutStyle 解析成可直接用的样式：自定义背景色优先，
+     文字色按背景亮度自动取黑/白，进度条色也随深浅切换，保证任何颜色都看得清。 */
+  global.resolveShoutStyle = function (st) {
+    var cfg = (st && st.shoutStyle) || {};
+    var tpl = global.SHOUT_TEMPLATES[cfg.template] || global.SHOUT_TEMPLATES.classic;
+    var bg = (/^#[0-9a-f]{6}$/i.test(cfg.bgColor || '') ? cfg.bgColor : tpl.bg);
+    var r = parseInt(bg.slice(1, 3), 16), g = parseInt(bg.slice(3, 5), 16), b = parseInt(bg.slice(5, 7), 16);
+    var light = (r * 299 + g * 587 + b * 114) / 1000 > 150;
+    return {
+      template: global.SHOUT_TEMPLATES[cfg.template] ? cfg.template : 'classic',
+      bg: bg, fg: light ? '#14251f' : '#ffffff',
+      accent: light ? tpl.accentLight : tpl.accent,
+      icon: tpl.icon, size: tpl.size, name: tpl.name
+    };
+  };
   global.DEFAULT_STATE = createDefaultState();
   global.createDefaultState = createDefaultState;
   global.defaultPanelRects = defaultPanelRects;
