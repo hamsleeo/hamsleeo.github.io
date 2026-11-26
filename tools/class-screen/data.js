@@ -127,6 +127,20 @@
       termStart: '',
       moduleOrder: ['schedule','current','homework','duty','countdown','overview','fun','groups','models','radar','notice','leave','attention'],
       hiddenModules: [],
+      /* 板块标题样式：每模块可单独设标题颜色(titleColor)与字号(titleSize,px)。
+         空字符串表示沿用主题默认色/默认字号。管理端配置，大屏实时应用。 */
+      moduleStyles: {
+        schedule: { titleColor: '', titleSize: 0 }, current: { titleColor: '', titleSize: 0 },
+        homework: { titleColor: '', titleSize: 0 }, duty: { titleColor: '', titleSize: 0 },
+        countdown: { titleColor: '', titleSize: 0 }, overview: { titleColor: '', titleSize: 0 },
+        fun: { titleColor: '', titleSize: 0 }, groups: { titleColor: '', titleSize: 0 },
+        models: { titleColor: '', titleSize: 0 }, radar: { titleColor: '', titleSize: 0 },
+        notice: { titleColor: '', titleSize: 0 }, leave: { titleColor: '', titleSize: 0 },
+        attention: { titleColor: '', titleSize: 0 }
+      },
+      /* 板块行高：大屏 4 行网格各行高度(px)。大屏编辑模式拖拽面板底边调整所在行高度，
+         同一行的模块等高（网格布局特性，保证整齐不破碎）。 */
+      rowHeights: [124, 252, 272, 228],
       /* 手机喊话：老师从管理端发送，展示端检测 id 变化后弹层并朗读 */
       shout: { id: '', text: '', from: '班主任', duration: 12, speak: true, voice: 'xiaoxiao', voiceSpeed: 4, createdAt: '' },
       /* schedule 为兼容旧数据的“当日课表”；新数据以 weeklySchedule（周一~周日）为准 */

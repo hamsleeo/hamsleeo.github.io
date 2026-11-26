@@ -23,6 +23,16 @@
     '下课了，请整理好桌面', '放学请关好门窗、带走垃圾', '请大家准备好课本和笔记',
     '距离考试还有一周，加油！', '请排好队，有序离开教室'
   ];
+  // 大屏板块清单：key 与 data-module 一致，label 用于后台展示
+  var MODULES = [
+    { key: 'schedule', label: '今日课程表' }, { key: 'current', label: '当前课程' },
+    { key: 'homework', label: '今日作业' }, { key: 'duty', label: '今日值日' },
+    { key: 'countdown', label: '事件倒计时' }, { key: 'overview', label: '班级积分总览' },
+    { key: 'fun', label: '今日消消乐' }, { key: 'groups', label: '小组积分榜' },
+    { key: 'models', label: '今日榜样' }, { key: 'radar', label: '六维成长画像' },
+    { key: 'notice', label: '公共栏 / 公告' }, { key: 'leave', label: '请假通报' },
+    { key: 'attention', label: '需关注 · 近期流水' }
+  ];
 
   var $ = function (s) { return document.querySelector(s); };
   var $$ = function (s) { return Array.prototype.slice.call(document.querySelectorAll(s)); };
@@ -194,6 +204,8 @@
     state.fun = lines('fun').map(function (l) { var p = l.split('|'); return { subject: p[0] || '其他', title: p[1] || '任务', total: +p[2] || 45, done: +p[3] || 0, unfinished: p[4] || '' }; });
     var periodsBox = $('#periodsList');
     if (periodsBox) state.periods = collectPeriods();
+    var styleBox = $('#moduleStyleList');
+    if (styleBox) collectModuleStyles();
   }
   function set(k, v) { var el = $('[data-key="' + k + '"]'); if (el) el.value = v == null ? '' : v; }
   function fillForm() {
@@ -216,7 +228,7 @@
     set('models', state.models.map(function (m) { return [m.name, m.role, m.score, m.emoji].join('|'); }).join('\n'));
     set('fun', state.fun.map(function (f) { return [f.subject, f.title, f.total, f.done, f.unfinished].join('|'); }).join('\n'));
     renderPeriods();
-    renderChips(); renderShout(); renderHome();
+    renderChips(); renderModuleStyles(); renderShout(); renderHome();
   }
 
   /* ---------- 保存 / 读取 ---------- */
@@ -487,6 +499,41 @@
     }).join('');
   }
 
+  // 板块显示勾选 + 标题颜色/字号
+  function renderModuleStyles() {
+    var box = $('#moduleStyleList');
+    if (!box) return;
+    state.moduleStyles = state.moduleStyles || {};
+    var hidden = state.hiddenModules || [];
+    box.innerHTML = MODULES.map(function (m) {
+      var st = state.moduleStyles[m.key] || { titleColor: '', titleSize: 0 };
+      var shown = hidden.indexOf(m.key) < 0;
+      return '<div class="module-style-item" data-ms="' + m.key + '">' +
+        '<label class="module-style-head"><input type="checkbox" data-ms-show="' + m.key + '"' + (shown ? ' checked' : '') + '><span>' + esc(m.label) + '</span></label>' +
+        '<div class="module-style-fields">' +
+          '<label>标题颜色<input type="color" data-ms-color="' + m.key + '" value="' + (st.titleColor || '#ffffff') + '"' + (!st.titleColor ? ' data-empty="1"' : '') + '></label>' +
+          '<label>字号px<input class="ms-size" type="number" min="12" max="60" data-ms-size="' + m.key + '" value="' + (st.titleSize || '') + '" placeholder="默认"></label>' +
+        '</div>' +
+      '</div>';
+    }).join('');
+  }
+  function collectModuleStyles() {
+    var styles = {};
+    var hidden = [];
+    MODULES.forEach(function (m) {
+      var showEl = $('[data-ms-show="' + m.key + '"]');
+      var colorEl = $('[data-ms-color="' + m.key + '"]');
+      var sizeEl = $('[data-ms-size="' + m.key + '"]');
+      if (showEl && !showEl.checked) hidden.push(m.key);
+      var color = '';
+      if (colorEl && !colorEl.getAttribute('data-empty')) color = (colorEl.value || '').trim();
+      var size = sizeEl ? (parseInt(sizeEl.value, 10) || 0) : 0;
+      styles[m.key] = { titleColor: color, titleSize: size };
+    });
+    state.hiddenModules = hidden;
+    state.moduleStyles = styles;
+  }
+
   /* ---------- 教学工具：点名 / 计时 / 考勤 ---------- */
   function renderAttendance() {
     $('#attDate').textContent = todayKey;
@@ -616,6 +663,19 @@
   $('#manageTabs').addEventListener('click', function (e) {
     var b = e.target.closest('[data-mtab]'); if (!b) return;
     switchManageTab(b.dataset.mtab); renderManageLists();
+  });
+  // 板块布局：颜色被改动即视为显式指定（清除"留空"标记）；恢复默认标题样式
+  var styleList = $('#moduleStyleList');
+  if (styleList) {
+    styleList.addEventListener('input', function (e) {
+      if (e.target.matches('[data-ms-color]')) e.target.removeAttribute('data-empty');
+    });
+  }
+  var resetStyles = $('#resetModuleStyles');
+  if (resetStyles) resetStyles.addEventListener('click', function () {
+    MODULES.forEach(function (m) { state.moduleStyles[m.key] = { titleColor: '', titleSize: 0 }; });
+    renderModuleStyles();
+    toast('标题样式已恢复默认，记得点保存同步大屏');
   });
   // 一周课表：星期切换
   var dayTabs = $('#dayTabs');

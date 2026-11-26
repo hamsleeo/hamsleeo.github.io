@@ -132,6 +132,27 @@
     var w = WALLPAPERS[state.wallpaper] || WALLPAPERS.gradient;
     screen.style.setProperty('--wall-image', w.css);
   }
+  /* 行高：由管理端配置 / 前端拖拽调整，写入 grid 的 4 个行变量 */
+  function applyRowHeights() {
+    var rh = state.rowHeights || [124, 252, 272, 228];
+    for (var i = 0; i < 4; i++) {
+      var h = +rh[i] || [124, 252, 272, 228][i];
+      screen.style.setProperty('--row-h' + (i + 1), h + 'px');
+    }
+  }
+  /* 板块标题样式：管理端为每个模块设置的标题颜色/字号 */
+  function applyModuleStyles() {
+    var styles = state.moduleStyles || {};
+    $$('.panel').forEach(function (p) {
+      var st = styles[p.dataset.module];
+      var h2 = $('h2', p);
+      if (!h2) return;
+      if (st && st.titleColor) { h2.style.color = st.titleColor; }
+      else { h2.style.color = ''; }
+      if (st && +st.titleSize > 0) { h2.style.fontSize = st.titleSize + 'px'; }
+      else { h2.style.fontSize = ''; }
+    });
+  }
 
   /* ---------------- 顶部与桌面图标 ---------------- */
   var deskIcons = [
@@ -396,7 +417,8 @@
   function renderAll() {
     renderShell(); renderSchedule(); renderCurrent(); renderHomework(); renderDuty(); renderCountdown();
     renderOverview(); renderRadar(); renderGroups(); renderModels(); renderFun(); renderNotice(); renderLeave(); renderAttention();
-    applyTheme(); applyLayout();
+    setupEditActions();
+    applyTheme(); applyLayout(); applyRowHeights(); applyModuleStyles();
     applyModuleVisibility();
     renderToggles(); renderThemeChoices(); renderStudentPicker(); renderDimTabs(); renderBehaviors(); renderRecentLog();
   }
@@ -419,15 +441,9 @@
     ui.drawer = null;
   }
   function renderToggles() {
-    var labels = {
-      schedule: '今日课程表', current: '当前课程', homework: '今日作业', duty: '今日值日', countdown: '事件倒计时',
-      overview: '积分总览', radar: '六维画像', groups: '小组积分榜', models: '今日榜样', fun: '今日消消乐',
-      notice: '公告栏', leave: '请假通报', attention: '关注与流水'
-    };
-    $('#moduleToggles').innerHTML = state.moduleOrder.map(function (m) {
-      return '<label class="module-toggle"><input type="checkbox" data-module-toggle="' + m + '"' +
-        (state.hiddenModules.indexOf(m) < 0 ? ' checked' : '') + '><span>' + labels[m] + '</span></label>';
-    }).join('');
+    // 板块显隐已在管理端「板块布局」统一配置，前端不再渲染显隐开关。
+    var box = $('#moduleToggles');
+    if (box) box.innerHTML = '';
   }
   function renderThemeChoices() {
     $('#themeSwatches').innerHTML = Object.keys(THEMES).map(function (k) {
@@ -457,9 +473,29 @@
   function setupEditActions() {
     $$('.panel').forEach(function (panel) {
       var actions = $('.head-actions', panel);
-      actions.innerHTML = '<button class="head-action-btn" data-gear="' + panel.dataset.module + '" title="配置模块">⚙</button>' +
-        '<button class="head-action-btn" data-hide="' + panel.dataset.module + '" title="隐藏模块">⊘</button>';
+      // 显隐统一由管理端「板块布局」控制，前端不再提供隐藏按钮，避免教室内误操作
+      actions.innerHTML = '<button class="head-action-btn" data-gear="' + panel.dataset.module + '" title="配置模块">⚙</button>';
+      // 底边拖拽手柄：编辑模式下调整所在网格行高度
+      if (!$('.resize-handle', panel)) {
+        var handle = document.createElement('div');
+        handle.className = 'resize-handle';
+        handle.dataset.resizeRow = panel.dataset.module;
+        handle.title = '拖动调整本行高度';
+        panel.appendChild(handle);
+      }
     });
+    // 显隐已移至管理端：隐藏前端设置抽屉里的"显示模块"区与工具栏的"添加模块"按钮
+    var mt = $('#moduleToggles');
+    if (mt) {
+      var box = mt.closest('.field') || mt;
+      if (box.parentNode) {
+        var h4 = box.previousElementSibling;
+        if (h4 && h4.tagName === 'H4') h4.style.display = 'none';
+        box.style.display = 'none';
+      }
+    }
+    var addBtn = $('#btnAddModule');
+    if (addBtn) addBtn.style.display = 'none';
   }
   function enterEdit() {
     ui.editing = true;
@@ -520,6 +556,53 @@
     $$('.panel').forEach(function (p) { p.classList.remove('dragging', 'drag-over'); });
     dragModule = null;
   });
+
+  /* ---- 编辑模式：拖拽面板底边手柄，调整所在网格行高度 ---- */
+  // 用可见 panel 的 offsetTop 判断行号（同行 panel 的 offsetTop 相同），避免依赖静态映射
+  function rowIndexOf(panel) {
+    var tops = [];
+    $$('.panel').forEach(function (p) {
+      if (p.classList.contains('hidden')) return;
+      var t = Math.round(p.offsetTop);
+      if (tops.indexOf(t) < 0) tops.push(t);
+    });
+    tops.sort(function (a, b) { return a - b; });
+    return tops.indexOf(Math.round(panel.offsetTop));
+  }
+  var resizeState = null;
+  grid.addEventListener('pointerdown', function (e) {
+    if (!ui.editing) return;
+    var handle = e.target.closest('.resize-handle');
+    if (!handle) return;
+    var panel = handle.closest('.panel');
+    if (!panel) return;
+    e.preventDefault();
+    e.stopPropagation();
+    var row = rowIndexOf(panel);
+    if (row < 0) return;
+    var rh = state.rowHeights || [124, 252, 272, 228];
+    var sm = (screen.style.transform || '').match(/scale\(([\d.]+)\)/);
+    var scale = sm ? (+sm[1] || 1) : 1;
+    resizeState = { row: row, startY: e.clientY, startH: +rh[row] || 124, scale: scale };
+    try { handle.setPointerCapture(e.pointerId); } catch (err) {}
+  });
+  grid.addEventListener('pointermove', function (e) {
+    if (!resizeState) return;
+    var delta = (e.clientY - resizeState.startY) / resizeState.scale;
+    var h = Math.max(70, Math.min(560, Math.round(resizeState.startH + delta)));
+    var rh = (state.rowHeights || [124, 252, 272, 228]).slice();
+    rh[resizeState.row] = h;
+    state.rowHeights = rh;
+    screen.style.setProperty('--row-h' + (resizeState.row + 1), h + 'px');
+    e.preventDefault();
+  });
+  function endResize(e) {
+    if (!resizeState) return;
+    resizeState = null;
+    save();
+  }
+  grid.addEventListener('pointerup', endResize);
+  grid.addEventListener('pointercancel', endResize);
 
   /* ---------------- 模块配置弹窗 ---------------- */
   var MODAL_CONFIG = {
@@ -1111,6 +1194,85 @@
     } catch (e) { /* 无 sessionStorage 时跳过 */ }
   })();
   function logVoice(m) { try { console.log('[班务大屏] ' + m); } catch (e) { /* 忽略 */ } }
+
+  /* ---------------- 随机点名（桌面悬浮条 / 后台教学工具共用） ---------------- */
+  var rollTimer = null;          // 快速滚动名字的定时器
+  var rollStopTimer = null;      // 自动停止的兜底定时器
+  var rollRunning = false;
+  var rollPickIndex = -1;        // 本轮最终点到的学生下标
+  function rollList() {
+    var arr = (state.students || []).map(function (s) { return String((s && s.name) || '').trim(); })
+      .filter(function (n) { return !!n; });
+    return arr;
+  }
+  function rollStop() {
+    if (!rollRunning) return;
+    rollRunning = false;
+    clearInterval(rollTimer); rollTimer = null;
+    clearTimeout(rollStopTimer); rollStopTimer = null;
+    var ov = $('#rollOverlay');
+    if (ov) ov.classList.remove('rolling');
+    var list = rollList();
+    var hint = $('#rollHint');
+    if (!list.length) { if (hint) hint.textContent = '暂无学生名单，请先在后台导入'; return; }
+    // 让最终名字均匀落在名单内，避免连续滚动恰好停在最后一个
+    if (rollPickIndex < 0 || rollPickIndex >= list.length) rollPickIndex = Math.floor(Math.random() * list.length);
+    var nameEl = $('#rollName');
+    if (nameEl) nameEl.textContent = list[rollPickIndex];
+    if (hint) hint.textContent = '本次点到 · 再次点击关闭';
+    // 用班车人声读出被点到的同学（无语音模块时静默，不影响展示）
+    speakShout('这次点到的是，' + list[rollPickIndex] + '同学', {}, function () {});
+  }
+  function rollStart() {
+    var list = rollList();
+    var ov = $('#rollOverlay');
+    var nameEl = $('#rollName');
+    var hint = $('#rollHint');
+    if (!ov || !nameEl) return;
+    if (!list.length) {
+      toast('暂无学生名单，请先在后台导入');
+      return;
+    }
+    if (rollRunning) return; // 滚动中点第二次 = 停止点名（见 toggle）
+    rollRunning = true;
+    rollPickIndex = Math.floor(Math.random() * list.length);
+    ov.classList.add('show');
+    ov.classList.add('rolling');
+    if (hint) hint.textContent = '正在随机点名 · 再次点击停止';
+    clearInterval(rollTimer);
+    rollTimer = setInterval(function () {
+      nameEl.textContent = list[Math.floor(Math.random() * list.length)];
+    }, 70);
+    // 兜底：3.2 秒后自动定格，防止悬浮条连点导致一直滚
+    clearTimeout(rollStopTimer);
+    rollStopTimer = setTimeout(rollStop, 3200);
+  }
+  function rollToggle() {
+    if (rollRunning) { rollStop(); return 'stopped'; }
+    // 弹层已显示但处于定格态 → 再点一次关闭
+    var ov = $('#rollOverlay');
+    if (ov && ov.classList.contains('show')) {
+      ov.classList.remove('show');
+      return 'closed';
+    }
+    rollStart();
+    return 'started';
+  }
+  function rollHide() {
+    rollRunning = false;
+    clearInterval(rollTimer); rollTimer = null;
+    clearTimeout(rollStopTimer); rollStopTimer = null;
+    var ov = $('#rollOverlay');
+    if (ov) { ov.classList.remove('show'); ov.classList.remove('rolling'); }
+  }
+  // 暴露给桌面悬浮控制台通过 CDP 调用（展示端始终可用，与登录态无关）
+  window.ClassScreenRollCall = {
+    toggle: rollToggle,
+    start: rollStart,
+    stop: rollStop,
+    hide: rollHide,
+    version: '20261126roll1'
+  };
 
   setupEditActions();
   syncSettingsInputs();

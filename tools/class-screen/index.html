@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>班级班务大屏 · 915班</title>
-  <link rel="stylesheet" href="styles.css?v=20261126light1" />
+  <link rel="stylesheet" href="styles.css?v=20261126roll1" />
 </head>
 <body>
   <div id="viewport">
@@ -161,6 +161,16 @@
         </div>
       </main>
 
+      <!-- 随机点名弹层（桌面悬浮条通过 CDP 调 window.ClassScreenRollCall.toggle） -->
+      <div class="roll-overlay" id="rollOverlay">
+        <div class="roll-card">
+          <div class="roll-crown">🎲</div>
+          <div class="roll-label">随机点名</div>
+          <div class="roll-name" id="rollName">准备开始…</div>
+          <div class="roll-hint" id="rollHint">再次点击「随机点名」停止</div>
+        </div>
+      </div>
+
       <!-- 手机喊话弹层 -->
       <div class="shout-overlay" id="shoutOverlay" aria-live="assertive">
         <div class="shout-banner">
@@ -283,8 +293,8 @@
   <script src="vendor/workbuddy-cloud-sdk.js?v=20261123k"></script>
   <script src="cloud-config.js?v=20261124w3"></script>
   <script src="cloud.js?v=20261124ui2"></script>
-  <script src="data.js?v=20261126light1"></script>
+  <script src="data.js?v=20261126roll1"></script>
   <script src="voice.js?v=20261123k"></script>
-  <script src="app.js?v=20261126light1"></script>
+  <script src="app.js?v=20261126roll1"></script>
 </body>
 </html>
