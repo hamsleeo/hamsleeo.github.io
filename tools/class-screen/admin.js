@@ -956,13 +956,23 @@
       msg('验证码已发送，请在 5 分钟内输入');
     } catch (e) { msg(e.message); }
   });
-  $('#codeLogin').addEventListener('click', async function () {
-    msg('');
-    if (!codeOtp) { msg('请先获取验证码'); return; }
-    if (codeOtp.phone !== $('#codePhone').value.trim()) { msg('手机号已修改，请重新获取验证码'); return; }
-    var code = $('#codeCode').value.trim();
-    if (!code) { msg('请输入验证码'); return; }
-    try {
+  // 登录按钮忙碌态：云端接口串行请求期间给出反馈，并防重复点击
+  function loginBusy(btn, work) {
+    if (!btn || btn.disabled) return;
+    var old = btn.textContent;
+    btn.disabled = true; btn.textContent = '登录中…';
+    Promise.resolve().then(work).then(
+      function () { btn.disabled = false; btn.textContent = old; },
+      function (e) { btn.disabled = false; btn.textContent = old; msg(e.message || '登录失败'); }
+    );
+  }
+  $('#codeLogin').addEventListener('click', function () {
+    loginBusy(this, async function () {
+      msg('');
+      if (!codeOtp) { msg('请先获取验证码'); return; }
+      if (codeOtp.phone !== $('#codePhone').value.trim()) { msg('手机号已修改，请重新获取验证码'); return; }
+      var code = $('#codeCode').value.trim();
+      if (!code) { msg('请输入验证码'); return; }
       // 已注册账号验证码直接登录；未注册账号走首次注册（需密码）
       if (codeOtp.isExistingUser) {
         session = await CloudAPI.verifyPhoneCode(codeOtp.phone, codeOtp.verificationId, true, code);
@@ -974,7 +984,7 @@
         return;
       }
       codeOtp = null; await afterLogin();
-    } catch (e) { msg(e.message); }
+    });
   });
   $('#sendRegCode').addEventListener('click', async function () {
     msg(''); var phone = $('#regPhone').value.trim();
@@ -1002,12 +1012,12 @@
       pendingOtp = null; await afterLogin();
     } catch (e) { msg(e.message); }
   });
-  $('#pwdLogin').addEventListener('click', async function () {
-    msg('');
-    try {
+  $('#pwdLogin').addEventListener('click', function () {
+    loginBusy(this, async function () {
+      msg('');
       session = await CloudAPI.signInWithPassword($('#loginPhone').value.trim(), $('#loginPassword').value);
       await afterLogin();
-    } catch (e) { msg(e.message); }
+    });
   });
   $('#logout').addEventListener('click', async function () {
     await CloudAPI.signOut();
