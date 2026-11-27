@@ -4,6 +4,10 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>班级管理 · 班务大屏</title>
+  <meta name="theme-color" content="#e89e5a" />
+  <link rel="manifest" href="manifest.webmanifest?v=20261127install1" />
+  <link rel="apple-touch-icon" href="icons/icon-192.png" />
+  <link rel="icon" type="image/png" href="icons/icon-192.png" />
   <link rel="stylesheet" href="admin.css?v=20261127offline1" />
 </head>
 <body>
@@ -84,6 +88,7 @@
         </div>
         <div class="top-actions">
           <label class="class-pick"><span>班级</span><select id="classSelect"></select></label>
+          <button class="icon-btn install-btn" id="btnAddDesktop" title="添加到桌面" aria-label="添加到桌面">⊞</button>
           <button class="icon-btn" id="openScreen" title="查看大屏" aria-label="查看大屏">↗</button>
         </div>
       </div>
@@ -573,6 +578,19 @@
     </div>
   </div>
 
+  <!-- 添加到桌面引导弹窗 -->
+  <div class="install-mask" id="installMask" hidden>
+    <div class="install-dialog">
+      <h3>把班级管理加到桌面</h3>
+      <p class="insub" id="installIntro">加到桌面后，点一下图标就能打开本班管理端，不用每次输入网址。</p>
+      <div id="installSteps"></div>
+      <div class="inact">
+        <button id="installClose">知道了</button>
+        <button class="primary" id="installPrimary">安装到桌面</button>
+      </div>
+    </div>
+  </div>
+
   <script src="vendor/workbuddy-cloud-sdk.js?v=20261123k"></script>
   <script src="vendor/xlsx.full.min.js?v=20261126a"></script>
   <script src="cloud-config.js?v=20261127local1"></script>
@@ -580,5 +598,11 @@
   <script src="cloud-local.js?v=20261127local2"></script>
   <script src="data.js?v=20261127local1"></script>
   <script src="admin.js?v=20261127local2"></script>
+  <script>
+    // 注册根作用域 SW（PWA「安装到桌面」的必要条件）
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js').catch(function () {});
+    }
+  </script>
 </body>
 </html>

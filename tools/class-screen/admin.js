@@ -1433,3 +1433,116 @@
   }
   boot();
 })();
+
+/* ============================================================
+   添加到桌面（PWA 安装 + 各平台引导 + .url 兜底）
+   独立 IIFE，捕获 beforeinstallprompt 越早越好
+   ============================================================ */
+(function () {
+  'use strict';
+  var deferredPrompt = null;
+  var btn = document.getElementById('btnAddDesktop');
+  var mask = document.getElementById('installMask');
+  var stepsBox = document.getElementById('installSteps');
+  var primary = document.getElementById('installPrimary');
+  var intro = document.getElementById('installIntro');
+  if (!btn || !mask) return;
+
+  var UA = navigator.userAgent || '';
+  var isIOS = /iPad|iPhone|iPod/.test(UA) ||
+              (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  var isAndroid = /Android/i.test(UA);
+  var isMobile = isIOS || isAndroid || /Mobile/i.test(UA);
+
+  // 已安装为应用时隐藏按钮
+  if (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) {
+    btn.hidden = true;
+  }
+  window.addEventListener('appinstalled', function () {
+    btn.hidden = true;
+    closeMask();
+    try { toast && toast('已添加到桌面'); } catch (e) {}
+  });
+
+  window.addEventListener('beforeinstallprompt', function (e) {
+    e.preventDefault();
+    deferredPrompt = e;
+    btn.hidden = false;
+  });
+
+  function closeMask() { mask.hidden = true; }
+  document.getElementById('installClose').addEventListener('click', closeMask);
+  mask.addEventListener('click', function (e) { if (e.target === mask) closeMask(); });
+
+  function step(n, html) {
+    return '<div class="insetp"><b>' + n + '</b><span>' + html + '</span></div>';
+  }
+
+  // 下载 Windows .url 快捷方式（浏览器无法直接写桌面，只能下载后拖过去）
+  function downloadUrlShortcut() {
+    var url = location.href.split('#')[0].replace(/([?&])local=1&?/, '$1').replace(/[?&]$/, '');
+    var name = (document.getElementById('heroClass') &&
+                document.getElementById('heroClass').textContent || '').trim() || '班级管理';
+    name = name.replace(/[\\/:*?"<>|]/g, '');
+    var content = '[InternetShortcut]\r\nURL=' + url + '\r\nIconIndex=0\r\n';
+    try {
+      var blob = new Blob(['\ufeff' + content], { type: 'application/octet-stream' });
+      var a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = name + '-班务管理.url';
+      document.body.appendChild(a); a.click();
+      setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+      return true;
+    } catch (e) { return false; }
+  }
+
+  function showDialog() {
+    stepsBox.innerHTML = '';
+    if (isIOS) {
+      intro.textContent = '苹果手机无法一键安装，按下面 3 步即可加到主屏幕（所有网页都这样）。';
+      stepsBox.innerHTML =
+        step(1, '点浏览器底部中间的 <kbd>分享</kbd> 按钮（方框向上箭头）') +
+        step(2, '在列表里找到并点 <kbd>添加到主屏幕</kbd>') +
+        step(3, '点右上角 <kbd>添加</kbd>，桌面就会出现「班级管理」图标');
+      primary.textContent = '下载电脑快捷方式';
+      primary.onclick = function () {
+        if (downloadUrlShortcut()) { closeMask(); try { toast && toast('已下载，拖到电脑桌面即可'); } catch (e) {} }
+      };
+    } else if (deferredPrompt) {
+      intro.textContent = '点下面的「安装到桌面」，浏览器会弹出确认，点确认即可。';
+      stepsBox.innerHTML =
+        step(1, '点 <kbd>安装到桌面</kbd> → 弹窗里点 <kbd>安装</kbd>') +
+        step(2, '安装后桌面出现「班级管理」图标，点开就是本班管理端');
+      primary.textContent = '安装到桌面';
+      primary.onclick = function () {
+        closeMask();
+        deferredPrompt.prompt();
+        deferredPrompt.userChoice.then(function () { deferredPrompt = null; });
+      };
+    } else if (isAndroid) {
+      intro.textContent = '安卓手机点浏览器菜单，选「添加到主屏幕」即可。';
+      stepsBox.innerHTML =
+        step(1, '点浏览器右上角 <kbd>⋮</kbd> 菜单') +
+        step(2, '选 <kbd>添加到主屏幕</kbd> 或 <kbd>安装应用</kbd>') +
+        step(3, '确认后桌面出现「班级管理」图标');
+      primary.textContent = '下载电脑快捷方式';
+      primary.onclick = function () {
+        if (downloadUrlShortcut()) { closeMask(); try { toast && toast('已下载，拖到电脑桌面即可'); } catch (e) {} }
+      };
+    } else {
+      // 电脑端但 beforeinstallprompt 未触发（可能非 Chrome/Edge 或条件未满足）
+      intro.textContent = '如果浏览器支持，会弹「安装应用」；否则可下载快捷方式文件放到桌面。';
+      stepsBox.innerHTML =
+        step(1, '推荐：用 <kbd>Edge</kbd> 或 <kbd>Chrome</kbd> 打开本页') +
+        step(2, '点地址栏右侧的 <kbd>安装应用</kbd> 图标，一键装到桌面') +
+        step(3, '或点下面按钮下载 <kbd>.url</kbd> 文件，拖到电脑桌面');
+      primary.textContent = '下载电脑快捷方式';
+      primary.onclick = function () {
+        if (downloadUrlShortcut()) { closeMask(); try { toast && toast('已下载，拖到电脑桌面即可'); } catch (e) {} }
+      };
+    }
+    mask.hidden = false;
+  }
+
+  btn.addEventListener('click', showDialog);
+})();
