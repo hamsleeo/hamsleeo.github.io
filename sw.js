@@ -6,7 +6,7 @@
    - 不做 precache：首页不带 sharecode 会被网关判 403，预缓存只会把错误页存进去。
    - 不缓存 403 / 5xx / 跨域请求：云 SDK、云接口、单词发音音源一律直连网络。
    - 不拦截非 GET 请求：注册、审核、打卡等写操作不受影响。 */
-var CACHE = 'teacher-toolbox-v9';
+var CACHE = 'teacher-toolbox-v10';
 
 self.addEventListener('install', function () {
   self.skipWaiting();
@@ -30,6 +30,7 @@ self.addEventListener('fetch', function (event) {
   try { url = new URL(req.url); } catch (e) { return; }
   if (url.origin !== self.location.origin) return;
   if (url.pathname.indexOf('/.cloud/') === 0) return;
+  if (url.pathname.indexOf('/api/') === 0) return; // 本地服务器接口不缓存，避免保存后读到旧数据
 
   event.respondWith(
     fetch(req).then(function (res) {

@@ -17,3 +17,6 @@ tmp-edge-*/
 
 # 安装包只在本地按班级打包，不上传仓库 / Pages
 files/
+
+# 本地服务器数据（含密码哈希与学生信息，勿提交）
+tools/class-screen/local-server/data/

@@ -24,10 +24,18 @@
   var oauthBase = PROXY + '/oauth';
   var useProxy = !!PROXY;
 
+  // 本地服务器模式：非原站点域名（localhost / 局域网 IP / 内网隧道域名）
+  // 或显式 ?local=1 时，改由 cloud-local.js 提供 CloudAPI，彻底不依赖 WorkBuddy 云端。
+  var host = (globalThis.location && globalThis.location.hostname || '').toLowerCase();
+  var cloudHosts = ['www.smartlearner.top', 'smartlearner.top', 'hamsleeo.github.io'];
+  var forcedLocal = new URLSearchParams(globalThis.location ? globalThis.location.search : '').get('local') === '1';
+  var isLocal = forcedLocal || cloudHosts.indexOf(host) < 0;
+
   window.CLOUD_CONFIG = {
     endpoint: useProxy ? apiBase : CLOUD,
     oauthRelayBaseUrl: useProxy ? oauthBase : OAUTH,
     publishableKey: 'wbpk_8srtdD1SnpD4G1BcCgMWfo_VI2ERCx4LO4F0iJ8oIMW29CnghsQGz36',
-    viaWorker: useProxy
+    viaWorker: useProxy,
+    local: isLocal
   };
 })();

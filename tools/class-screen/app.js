@@ -1285,10 +1285,10 @@
         renderAll();
         lastCloudOk = Date.now();
         writeSnapshot(); // 同步成功即落地快照，供云端故障时兜底
-        setSync('云端已同步 · ' + (row.updated_at ? new Date(row.updated_at).toLocaleString('zh-CN', { hour12: false }) : ''));
+        setSync((window.CLOUD_CONFIG && window.CLOUD_CONFIG.local ? '本地已同步 · ' : '云端已同步 · ') + (row.updated_at ? new Date(row.updated_at).toLocaleString('zh-CN', { hour12: false }) : ''));
         if (MODE === 'display') checkShout(state.shout);
       } else if (MODE === 'admin') {
-        setSync('云端暂无数据 · 修改后点「保存到云端」初始化');
+        setSync((window.CLOUD_CONFIG && window.CLOUD_CONFIG.local ? '本地暂无数据 · 修改后点「保存」初始化' : '云端暂无数据 · 修改后点「保存到云端」初始化'));
       } else {
         setSync('等待班主任配置');
       }
@@ -1296,9 +1296,9 @@
       if (MODE === 'display' && restoreFromSnapshot()) {
         // 云端故障（如环境暂停/欠费）：保持最后一份数据继续展示，不清屏不退回默认
       } else {
-        setSync('云端连接失败');
+        setSync((window.CLOUD_CONFIG && window.CLOUD_CONFIG.local ? '本地服务器连接失败' : '云端连接失败'));
       }
-      if (MODE === 'admin') toast('读取云端数据失败：' + e.message);
+      if (MODE === 'admin') toast((window.CLOUD_CONFIG && window.CLOUD_CONFIG.local ? '读取本地数据失败：' : '读取云端数据失败：') + e.message);
     }
   }
 
