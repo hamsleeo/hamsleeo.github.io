@@ -53,10 +53,10 @@ http://192.168.1.50:8080/tools/class-screen/admin.html
 
 Windows 防火墙需放行 8080 端口（或你设置的 PORT）。
 
-桌面安装包默认打开 `http://127.0.0.1:8080/...`；若教室机访问的是另一台服务器，编辑安装目录里的 `config.ini`：
+当前 9 个分班安装包默认打开 `http://10.224.98.123:8080/...`（服务器局域网 IP）；若服务器 IP 变化或改用外网隧道域名，编辑安装目录里的 `config.ini`：
 
 ```ini
-ScreenUrl=http://192.168.1.50:8080/tools/class-screen/index.html?class=main
+ScreenUrl=http://10.224.98.123:8080/tools/class-screen/index.html?class=main
 ```
 
 已安装电脑可把改好的文件另存为 `config.user.ini`，重装时会自动沿用。
