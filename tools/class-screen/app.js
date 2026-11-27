@@ -4,6 +4,9 @@
   var KEY = 'classScreenState_v1';
   var LAYOUT_KEY = 'classScreenLayoutLocal_v1'; // 本机布局覆盖：教室端拖拽的尺寸/位置优先于云端
   var CLOUD_SEEN_KEY = 'classScreenCloudLayoutSeen_v1'; // 已应用的云端布局版本；云端变新时强制采用云端
+  var SNAPSHOT_KEY = 'classScreenLastGood_v1'; // 云端最后一次成功同步的整份数据快照（离线兜底用）
+  var POLL_MS = 20000; // 大屏轮询间隔：5s→20s，云端请求量降到 1/4（节省资源点）
+  var lastCloudOk = 0; // 上次云端同步成功时间戳；用于判断离线状态显示
   var screen = document.getElementById('screen');
   var grid = document.getElementById('dashboardGrid');
   var _modeParam = new URLSearchParams(location.search).get('mode');
@@ -139,6 +142,37 @@
   function setSync(text) {
     var el = document.getElementById('syncStatus');
     if (el) el.textContent = text;
+  }
+  // 云端最后一次成功同步的整份数据写入本地快照。大屏掉线/刷新时据此恢复，
+  // 避免退回默认演示数据（display 模式原本从不把云端数据落地）。
+  function writeSnapshot() {
+    if (MODE !== 'display') return;
+    try {
+      localStorage.setItem(SNAPSHOT_KEY, JSON.stringify({ data: state, ts: Date.now() }));
+    } catch (e) { /* 隐私模式/容量不足忽略 */ }
+  }
+  function readSnapshot() {
+    try {
+      var raw = localStorage.getItem(SNAPSHOT_KEY);
+      if (!raw) return null;
+      var s = JSON.parse(raw);
+      if (!s || !s.data || typeof s.data !== 'object') return null;
+      return s;
+    } catch (e) { return null; }
+  }
+  // 离线恢复：用快照数据重建 state，并应用本机布局覆盖。返回是否成功恢复。
+  function restoreFromSnapshot() {
+    var s = readSnapshot();
+    if (!s) return false;
+    try {
+      state = normalizeState(deepMerge(createDefaultState(), s.data));
+      applyLocalLayoutOverride();
+      syncSettingsInputs();
+      renderAll();
+      var t = s.ts ? new Date(s.ts).toLocaleString('zh-CN', { hour12: false }) : '';
+      setSync('离线模式 · 显示最后同步数据' + (t ? '（' + t + '）' : ''));
+      return true;
+    } catch (e) { return false; }
   }
   function esc(s) {
     return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
@@ -1246,9 +1280,11 @@
             localStorage.setItem(CLOUD_SEEN_KEY, String(cloudVer));
           }
         } catch (e) {}
-        applyLocalLayoutOverride(); // 本机布局优先，避免教室端拖拽被 5 秒轮询覆盖
+        applyLocalLayoutOverride(); // 本机布局优先，避免教室端拖拽被轮询覆盖
         syncSettingsInputs();
         renderAll();
+        lastCloudOk = Date.now();
+        writeSnapshot(); // 同步成功即落地快照，供云端故障时兜底
         setSync('云端已同步 · ' + (row.updated_at ? new Date(row.updated_at).toLocaleString('zh-CN', { hour12: false }) : ''));
         if (MODE === 'display') checkShout(state.shout);
       } else if (MODE === 'admin') {
@@ -1257,7 +1293,11 @@
         setSync('等待班主任配置');
       }
     } catch (e) {
-      setSync('云端连接失败');
+      if (MODE === 'display' && restoreFromSnapshot()) {
+        // 云端故障（如环境暂停/欠费）：保持最后一份数据继续展示，不清屏不退回默认
+      } else {
+        setSync('云端连接失败');
+      }
       if (MODE === 'admin') toast('读取云端数据失败：' + e.message);
     }
   }
@@ -1278,9 +1318,12 @@
       await loadCloud();
       // 展示端轮询保持数据同步
     } else {
+      // 启动先用本地快照渲染，云端失败/未配置时也不会退回默认演示数据
+      restoreFromSnapshot();
       await loadCloud();
-      // 教师端布局预览只读一次云端：拖拽过程中不能被 5 秒轮询重绘打断
-      if (MODE === 'display') setInterval(loadCloud, 5000);
+      // 教师端布局预览只读一次云端：拖拽过程中不能被轮询重绘打断。
+      // 大屏轮询 5s→20s：教室机常开时请求量降到 1/4，显著节省云端资源点。
+      if (MODE === 'display') setInterval(loadCloud, POLL_MS);
     }
   }
 
