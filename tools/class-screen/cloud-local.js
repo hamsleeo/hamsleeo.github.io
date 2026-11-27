@@ -147,10 +147,13 @@
   function confirmPasswordReset() { return localOnlyError(); }
 
   function hideCloudOnlyAuth() {
+    // 本地服务器版：登录即注册，完全没有短信验证码流程。
+    // 隐藏「验证码登录 / 首次注册 / 忘记密码」入口，只保留「密码登录」。
     var sels = [
-      '[data-auth="code"]', '[data-auth="reset"]',
-      '[data-auth-pane="code"]', '[data-auth-pane="reset"]',
-      '#btnSwitchLogin', '#codeToLogin', '#resetToLogin'
+      '[data-auth="code"]', '[data-auth="register"]', '[data-auth="reset"]',
+      '[data-auth-pane="code"]', '[data-auth-pane="register"]', '[data-auth-pane="reset"]',
+      '#btnSwitchLogin', '#codeToLogin', '#resetToLogin',
+      '#toCode', '#toResetPwd', '#toRegister', '#toLogin'
     ];
     sels.forEach(function (sel) {
       Array.prototype.forEach.call(document.querySelectorAll(sel), function (el) {
@@ -158,6 +161,16 @@
         el.style.display = 'none';
       });
     });
+    var loginPane = document.querySelector('[data-auth-pane="login"]');
+    if (loginPane && !document.getElementById('localAuthTip')) {
+      var tip = document.createElement('p');
+      tip.id = 'localAuthTip';
+      tip.className = 'auth-tip';
+      tip.textContent = '本地版无需短信验证码：输入手机号和至少 6 位密码直接登录，首次登录自动注册；第一位用户为管理员。';
+      var btn = loginPane.querySelector('#pwdLogin');
+      if (btn && btn.parentNode) btn.parentNode.insertBefore(tip, btn.nextSibling);
+      else loginPane.appendChild(tip);
+    }
   }
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', hideCloudOnlyAuth);
