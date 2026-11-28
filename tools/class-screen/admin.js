@@ -1119,6 +1119,15 @@
   if (noAccessLogout) noAccessLogout.addEventListener('click', function () { $('#logout').click(); });
   $('#openScreen').addEventListener('click', function () { window.open(CloudAPI.boardUrl(), '_blank'); });
   $('#openScreen2').addEventListener('click', function () { window.open(CloudAPI.boardUrl(), '_blank'); });
+  // 同步到大屏：强制把当前设置写库并递增版本号，大屏几秒内探测到即全量刷新。
+  // 大屏已改为"版本号变化才刷新"，所以这里只负责制造一次真实变更即可。
+  var syncBtn = $('#btnSyncScreen');
+  if (syncBtn) syncBtn.addEventListener('click', async function () {
+    if (!session || !access) { toast('请先登录'); return; }
+    syncBtn.classList.add('busy');
+    await save(); // save() 自身已提示"已同步到大屏"；写库即递增 rev，大屏几秒内自动刷新
+    syncBtn.classList.remove('busy');
+  });
   $('#changeName').addEventListener('click', async function () {
     if (!session || !access) { toast('请先登录'); return; }
     var cur = access.displayName || '';

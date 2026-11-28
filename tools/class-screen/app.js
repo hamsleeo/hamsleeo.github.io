@@ -5,7 +5,10 @@
   var LAYOUT_KEY = 'classScreenLayoutLocal_v1'; // 本机布局覆盖：教室端拖拽的尺寸/位置优先于云端
   var CLOUD_SEEN_KEY = 'classScreenCloudLayoutSeen_v1'; // 已应用的云端布局版本；云端变新时强制采用云端
   var SNAPSHOT_KEY = 'classScreenLastGood_v1'; // 云端最后一次成功同步的整份数据快照（离线兜底用）
-  var POLL_MS = 20000; // 大屏轮询间隔：5s→20s，云端请求量降到 1/4（节省资源点）
+  var REV_POLL_MS = 5000;        // 版本号探测间隔：只取一个数字/时间戳，极轻量，不走整份数据
+  var FALLBACK_MS = 10 * 60 * 1000; // 兜底全量刷新间隔：10 分钟强制拉一次，防止版本号机制漏同步
+  var lastRev = null;            // 上次已应用的班级数据版本号（本地=rev整数，云端=updated_at）
+  var lastFullLoad = 0;          // 上次成功全量加载的时间戳
   var lastCloudOk = 0; // 上次云端同步成功时间戳；用于判断离线状态显示
   var screen = document.getElementById('screen');
   var grid = document.getElementById('dashboardGrid');
@@ -1510,7 +1513,10 @@
     if (ui.hwEditing || ui.funEditing) return;
     try {
       var row = await CloudAPI.loadBoard();
+      lastFullLoad = Date.now();
       if (row && row.data && Object.keys(row.data).length) {
+        // 记录版本号：本地版 rev 整数优先，云端版用 updated_at 时间字符串
+        lastRev = (row.rev !== undefined && row.rev !== null) ? row.rev : (row.updated_at || '');
         state = normalizeState(deepMerge(createDefaultState(), row.data));
         // 云端布局版本变新（教师端刚保存）→ 强制采用云端，清掉本机旧草稿。
         // 避免教室电脑时钟偏快时，本机草稿版本号压过云端导致新布局推不过去。
@@ -1544,6 +1550,22 @@
     }
   }
 
+  // 事件驱动同步：只探测版本号（一个数字/时间戳），变化才拉全量数据并重绘。
+  // 平时一次全量请求都不发，云端流量从"每20秒整份JSON"降到"变化时一次+兜底"。
+  async function pollRev() {
+    if (ui.hwEditing || ui.funEditing) return; // 编辑中跳过，避免覆盖草稿
+    try {
+      var cur = await CloudAPI.getRev();
+      // 版本号变化 → 数据真的被改过 → 拉全量并刷新
+      if (cur !== lastRev) { await loadCloud(); return; }
+      // 兜底：长时间没变化也强制拉一次，防止通知/版本号机制漏同步
+      if (Date.now() - lastFullLoad >= FALLBACK_MS) await loadCloud();
+    } catch (e) {
+      // 探测失败不打断展示；到兜底时间再尝试全量（含快照恢复逻辑）
+      if (Date.now() - lastFullLoad >= FALLBACK_MS) await loadCloud();
+    }
+  }
+
   async function bootCloud() {
     cloudReady = CloudAPI.init();
     if (!cloudReady) {
@@ -1564,8 +1586,8 @@
       restoreFromSnapshot();
       await loadCloud();
       // 教师端布局预览只读一次云端：拖拽过程中不能被轮询重绘打断。
-      // 大屏轮询 5s→20s：教室机常开时请求量降到 1/4，显著节省云端资源点。
-      if (MODE === 'display') setInterval(loadCloud, POLL_MS);
+      // 大屏端改为版本号探测：平时只取 rev，数据变化才全量刷新，显著省流量。
+      if (MODE === 'display') setInterval(pollRev, REV_POLL_MS);
     }
   }
 

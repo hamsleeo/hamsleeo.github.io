@@ -137,6 +137,20 @@
     return res.data;
   }
 
+  // 极轻量版本号探测：只查 updated_at 一列（带 RLS，未登录展示端也能读），
+  // 大屏据此判断班级数据是否真的变化，避免每 20 秒拉整份 JSON 烧云端请求量。
+  // 返回 ISO 时间字符串；云端 saveBoard 每次都会刷新 updated_at。
+  async function getRev(key) {
+    if (!cloud) throw new Error('云服务未初始化');
+    var k = key || getBoardKey();
+    var res = await cloud.database.from('class_boards')
+      .select('updated_at')
+      .eq('board_key', k)
+      .maybeSingle();
+    if (res.error) throw new Error(res.error.message || '读取版本号失败');
+    return (res.data && res.data.updated_at) || '';
+  }
+
   // 大屏端免密作业编辑（云端版降级实现）：
   // 云端 class_boards 受 RLS 保护，匿名无法写入。有登录态时读取整份数据、
   // 只替换 homework 后整体保存；无登录态则明确提示（本地版一体机不受此限制）。
@@ -450,7 +464,7 @@
     BOARD_KEY: DEFAULT_BOARD_KEY,
     getBoardKey: getBoardKey, setBoardKey: setBoardKey, boardUrl: boardUrl,
     blankState: blankState,
-    loadBoard: loadBoard, saveBoard: saveBoard, saveHomework: saveHomework, saveFun: saveFun,
+    loadBoard: loadBoard, getRev: getRev, saveBoard: saveBoard, saveHomework: saveHomework, saveFun: saveFun,
     getMyAccess: getMyAccess, listClasses: listClasses, listUsers: listUsers,
     updateMyName: updateMyName,
     assignTeacher: assignTeacher, removeAssignment: removeAssignment,
