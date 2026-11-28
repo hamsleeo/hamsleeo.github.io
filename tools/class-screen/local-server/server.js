@@ -319,6 +319,34 @@ async function handleApi(req, res, urlObj) {
     return sendJson(res, 200, { ok: true, homework: clean, updated_at: row.updated_at });
   }
 
+  /* 大屏端免密消消乐编辑：科代表直接登记各科未交作业情况。
+     只改 board.data.fun 一个字段，其他数据（积分/名单/课表/作业等）一律不碰，
+     因此无需登录、也不会放大权限面。条数/长度上限防止误填刷屏。 */
+  if (p === '/api/fun' && method === 'POST') {
+    const body = await readBody(req);
+    const key = decodeURIComponent(String(body.key || '').trim() || 'main');
+    const fun = body.fun;
+    if (!Array.isArray(fun) || fun.length > 30) return fail(res, 400, '消消乐格式错误或科目过多');
+    const clean = [];
+    for (const f of fun) {
+      if (!f || typeof f !== 'object') continue;
+      const subject = String(f.subject || '其他').trim().slice(0, 12) || '其他';
+      const title = String(f.title || '任务').trim().slice(0, 120) || '任务';
+      const total = Math.max(0, Math.min(9999, Number(f.total) || 0));
+      const done = Math.max(0, Math.min(total, Number(f.done) || 0));
+      const unfinished = String(f.unfinished || '').trim().slice(0, 500);
+      clean.push({ subject: subject, title: title, total: total, done: done, unfinished: unfinished });
+    }
+    const row = db.boards[key] || { data: {}, updated_at: now(), owner_name: '' };
+    row.data = row.data || {};
+    row.data.fun = clean;
+    row.updated_at = now();
+    row.owner_name = '大屏消消乐编辑';
+    db.boards[key] = row;
+    saveDb(db);
+    return sendJson(res, 200, { ok: true, fun: clean, updated_at: row.updated_at });
+  }
+
   /* ---------- 权限 ---------- */
   if (p === '/api/access' && method === 'POST') {
     const u = requireUser(req, res);

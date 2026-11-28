@@ -79,6 +79,10 @@
   function saveHomework(homework, key) {
     return api('/api/homework', { method: 'POST', body: { key: key || getBoardKey(), homework: homework } });
   }
+  // 大屏端免密消消乐编辑：只写 fun 字段，服务端不校验登录
+  function saveFun(fun, key) {
+    return api('/api/fun', { method: 'POST', body: { key: key || getBoardKey(), fun: fun } });
+  }
 
   /* ---------- 权限与用户 ---------- */
   function getMyAccess(session, customName) {
@@ -189,7 +193,7 @@
     BOARD_KEY: DEFAULT_BOARD_KEY,
     getBoardKey: getBoardKey, setBoardKey: setBoardKey, boardUrl: boardUrl,
     blankState: blankState,
-    loadBoard: loadBoard, saveBoard: saveBoard, saveHomework: saveHomework,
+    loadBoard: loadBoard, saveBoard: saveBoard, saveHomework: saveHomework, saveFun: saveFun,
     getMyAccess: getMyAccess, listClasses: listClasses, listUsers: listUsers,
     updateMyName: updateMyName,
     assignTeacher: assignTeacher, removeAssignment: removeAssignment,

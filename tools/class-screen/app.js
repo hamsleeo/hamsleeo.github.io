@@ -22,6 +22,8 @@
   var state = loadState();
   var ui = {
     editing: false,
+    hwEditing: false,
+    funEditing: false,
     hwSubject: 0,
     scoreMode: 'plus',
     selectedDim: '学习态度',
@@ -568,6 +570,81 @@
         '<div class="fun-unfinished">「' + esc(f.title) + '」未完成：<b>' + esc(f.unfinished || '无') + '</b></div></div>';
     }).join('');
   }
+  /* ---- 大屏端免密消消乐编辑（科代表登记未交作业情况） ----
+     只改 state.fun 一个字段，通过 CloudAPI.saveFun 写回服务端，
+     不触碰积分/名单/课表/作业等其它数据；编辑期间暂停轮询覆盖。 */
+  var funDraft = null;
+  function openFunEditor() {
+    funDraft = JSON.parse(JSON.stringify(state.fun || []));
+    if (!funDraft.length) funDraft = [{ subject: '语文', title: '作业完成情况', total: 45, done: 0, unfinished: '' }];
+    ui.funEditing = true;
+    renderFunEditor();
+  }
+  function renderFunEditor() {
+    var root = $('#modalRoot');
+    var rows = funDraft.map(function (f, i) {
+      return '<div class="fune-row" data-funer="' + i + '">' +
+        '<div class="fune-row-head"><b>第 ' + (i + 1) + ' 科</b><button class="hwe-del" data-fundel="' + i + '" title="删除这一科">✕ 删除</button></div>' +
+        '<div class="fune-grid">' +
+        '<label>科目<input class="fune-subject" data-funsubject="' + i + '" value="' + esc(f.subject || '') + '" placeholder="如 语文"></label>' +
+        '<label>任务<input class="fune-title" data-funtitle="' + i + '" value="' + esc(f.title || '') + '" placeholder="如 单词默写"></label>' +
+        '<label>总人数<input class="fune-num" data-funtotal="' + i + '" type="number" min="0" value="' + (+f.total || 0) + '"></label>' +
+        '<label>已交人数<input class="fune-num" data-fundone="' + i + '" type="number" min="0" value="' + (+f.done || 0) + '"></label>' +
+        '</div>' +
+        '<label class="fune-unf-label">未交名单（逗号/顿号分隔）<input class="fune-unf" data-fununf="' + i + '" value="' + esc(f.unfinished || '') + '" placeholder="如 张三、李四、王五"></label>' +
+        '</div>';
+    }).join('');
+    root.innerHTML = '<div class="modal hwe-modal"><h3>✓ 编辑今日消消乐 · 未交作业</h3>' +
+      '<p class="hint">登记各科未交作业名单，保存后立即显示在大屏上。仅消消乐数据可编辑。</p>' +
+      '<div class="fune-rows">' + (rows || '<p class="hint">暂无科目，点下方「＋ 添加一科」开始登记。</p>') + '</div>' +
+      '<button class="hwe-add" data-funadd>＋ 添加一科</button>' +
+      '<div class="modal-actions"><button class="et-btn" data-funmodal="cancel">取消</button><button class="et-btn primary" data-funmodal="save">保存到大屏</button></div></div>';
+    root.classList.add('show');
+    root.dataset.funedit = '1';
+  }
+  function syncFunEditorInputs() {
+    $$('.fune-row', $('#modalRoot')).forEach(function (row) {
+      var i = +row.dataset.funer; if (!funDraft[i]) return;
+      function val(sel) { var el = $(sel, row); return el ? el.value : ''; }
+      funDraft[i].subject = val('.fune-subject').trim() || '其他';
+      funDraft[i].title = val('.fune-title').trim() || '任务';
+      funDraft[i].total = Math.max(0, Number(val('[data-funtotal="' + i + '"]')) || 0);
+      funDraft[i].done = Math.max(0, Number(val('[data-fundone="' + i + '"]')) || 0);
+      funDraft[i].unfinished = val('.fune-unf').trim();
+    });
+  }
+  function saveFunEditor() {
+    syncFunEditorInputs();
+    var clean = funDraft.map(function (f) {
+      var total = Math.max(0, Number(f.total) || 0);
+      var done = Math.min(Math.max(0, Number(f.done) || 0), total);
+      return {
+        subject: String(f.subject || '其他').trim().slice(0, 12) || '其他',
+        title: String(f.title || '任务').trim().slice(0, 120) || '任务',
+        total: total, done: done,
+        unfinished: String(f.unfinished || '').trim().slice(0, 500)
+      };
+    });
+    state.fun = clean;
+    save(); renderAll();
+    closeModal();
+    ui.funEditing = false;
+    funDraft = null;
+    toast('消消乐已更新，正在同步…');
+    if (!cloudReady || typeof CloudAPI.saveFun !== 'function') {
+      toast('消消乐已保存到本机；云端版需班主任登录后在管理端保存');
+      return;
+    }
+    CloudAPI.saveFun(clean, CloudAPI.getBoardKey ? CloudAPI.getBoardKey() : undefined)
+      .then(function () {
+        writeSnapshot();
+        setSync('消消乐已同步 · ' + new Date().toLocaleTimeString('zh-CN', { hour12: false }));
+        toast('消消乐已保存并同步');
+      })
+      .catch(function (e) {
+        toast('本机已更新，云端同步失败：' + e.message);
+      });
+  }
   function safeColor(c) { return /^#[0-9a-fA-F]{3,8}$|^rgb\([\d\s,.]+\)$/.test(String(c || '')) ? c : '#7fd6c0'; }
   function renderNotice() {
     $('#noticeList').innerHTML = state.announcements.slice(0, 3).map(function (a) {
@@ -875,7 +952,7 @@
     root.dataset.config = module;
     $('#modalText').focus();
   }
-  function closeModal() { $('#modalRoot').classList.remove('show'); $('#modalRoot').innerHTML = ''; try { $('#modalRoot').dataset.hwedit = ''; } catch (e) {} }
+  function closeModal() { $('#modalRoot').classList.remove('show'); $('#modalRoot').innerHTML = ''; try { $('#modalRoot').dataset.hwedit = ''; $('#modalRoot').dataset.funedit = ''; } catch (e) {} }
 
   /* ---------------- 快捷点评 ---------------- */
   function renderStudentPicker() {
@@ -1028,6 +1105,32 @@
       syncHwEditorInputs();
       var cur2 = hwDraft[hwActiveSubject]; if (cur2) { cur2.items.splice(+b.dataset.hwdel, 1); renderHwEditor(); }
       return;
+    }
+  });
+
+  var funEditBtn = $('#funEditBtn');
+  if (funEditBtn) funEditBtn.addEventListener('click', function (e) { e.stopPropagation(); openFunEditor(); });
+  // 消消乐编辑弹窗交互（独立命名空间 data-fun*）
+  $('#modalRoot').addEventListener('click', function (e) {
+    var root = $('#modalRoot');
+    if (!root.dataset.funedit) return;
+    var b;
+    if ((b = e.target.closest('[data-funmodal]'))) {
+      if (b.dataset.funmodal === 'cancel') { closeModal(); ui.funEditing = false; funDraft = null; }
+      else if (b.dataset.funmodal === 'save') saveFunEditor();
+      return;
+    }
+    if (e.target.closest('[data-funadd]')) {
+      syncFunEditorInputs();
+      var used = funDraft.map(function (f) { return f.subject; });
+      var presets = ['语文','数学','英语','物理','化学','生物','政治','历史','地理','其他'];
+      var next = presets.filter(function (s) { return used.indexOf(s) < 0; })[0] || '新科目';
+      funDraft.push({ subject: next, title: '作业完成情况', total: 45, done: 0, unfinished: '' });
+      renderFunEditor(); return;
+    }
+    if ((b = e.target.closest('[data-fundel]'))) {
+      syncFunEditorInputs();
+      funDraft.splice(+b.dataset.fundel, 1); renderFunEditor(); return;
     }
   });
 
@@ -1383,8 +1486,8 @@
   }
 
   async function loadCloud() {
-    // 大屏作业编辑中：跳过本次轮询，避免整体覆盖正在登记的草稿
-    if (ui.hwEditing) return;
+    // 大屏作业/消消乐编辑中：跳过本次轮询，避免整体覆盖正在登记的草稿
+    if (ui.hwEditing || ui.funEditing) return;
     try {
       var row = await CloudAPI.loadBoard();
       if (row && row.data && Object.keys(row.data).length) {
