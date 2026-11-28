@@ -400,6 +400,20 @@
               <h2>主题与背景</h2>
               <div class="chips" id="themeChips"></div>
               <div class="chips" id="wallChips"></div>
+              <div class="bg-settings">
+                <label class="switch-line">
+                  <input type="checkbox" id="transparentMode" />
+                  <span><b>透明玻璃模式</b><small>卡片半透明磨砂，背景图片更清晰；选「纯透明」可透出桌面</small></span>
+                </label>
+                <p class="hint">内置背景图（点击直接选用）：</p>
+                <div class="bg-gallery" id="bgGallery"></div>
+                <p class="hint">当前自定义背景：<b id="customBgState">未设置</b></p>
+                <div class="inline-form">
+                  <label class="ghost sm file-label">＋ 上传我的背景图片<input type="file" id="bgUpload" accept="image/*" /></label>
+                  <button type="button" class="ghost sm" id="clearBg">清除自定义图片</button>
+                </div>
+                <p class="hint">图片会自动压缩后同步到本班大屏；建议使用 16:9 横图。</p>
+              </div>
               <button class="primary save" data-save>保存并同步到大屏</button>
             </div>
           </div>

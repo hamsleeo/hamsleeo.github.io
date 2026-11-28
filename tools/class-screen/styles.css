@@ -784,3 +784,59 @@ body.mode-display .head-action-btn { display: none !important; }
 #screen[data-light="1"] .theme-swatch.active,
 #screen[data-light="1"] .wall-choice.active { border-color: #2b3f5c; }
 #screen[data-light="1"] ::-webkit-scrollbar-thumb { background: rgba(28,50,82,.28); }
+
+/* ============================================================
+   透明玻璃模式（班主任后台开启）
+   卡片/顶栏改为磨砂半透明；背景图由 wallpaper 或自定义图片提供，
+   「纯透明」无图时把底层（含桌面，如浏览器支持）露出来。
+   ============================================================ */
+body.transparent-wall,
+body.transparent-wall #viewport { background: transparent; }
+#screen[data-transparent="1"] {
+  background: transparent;
+}
+#screen[data-transparent="1"] .wallpaper {
+  background: transparent;
+}
+#screen[data-transparent="1"] .wallpaper::after {
+  opacity: .88;
+  background-size: cover;
+  background-position: center;
+}
+#screen[data-transparent="1"][data-wall-empty="1"] .wallpaper::after { opacity: 0; }
+#screen[data-transparent="1"] .wallpaper-glow,
+#screen[data-transparent="1"] .wallpaper-grid { display: none; }
+/* 深色主题：磨砂暗玻璃，浅色文字保持可读 */
+#screen[data-transparent="1"] .panel {
+  background: rgba(12,22,40,.52);
+  border-color: rgba(255,255,255,.26);
+  box-shadow: 0 14px 42px rgba(4,10,22,.22), inset 0 1px rgba(255,255,255,.16);
+  backdrop-filter: blur(18px) saturate(1.15);
+  -webkit-backdrop-filter: blur(18px) saturate(1.15);
+}
+#screen[data-transparent="1"] .class-badge,
+#screen[data-transparent="1"] .top-btn {
+  background: rgba(12,22,40,.52);
+  border-color: rgba(255,255,255,.28);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+#screen[data-transparent="1"] .desk-icon .glyph {
+  background: rgba(12,22,40,.38);
+  border: 1px solid rgba(255,255,255,.28);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+/* 浅色主题：磨砂白玻璃，深色文字保持可读 */
+#screen[data-transparent="1"][data-light="1"] .panel {
+  background: rgba(255,255,255,.68);
+  border-color: rgba(255,255,255,.72);
+  box-shadow: 0 14px 42px rgba(28,50,82,.14), inset 0 1px rgba(255,255,255,.85);
+}
+#screen[data-transparent="1"][data-light="1"] .class-badge,
+#screen[data-transparent="1"][data-light="1"] .top-btn {
+  background: rgba(255,255,255,.74);
+  border-color: rgba(28,50,82,.16);
+}
+#screen[data-transparent="1"][data-light="1"] .desk-icon .glyph { background: rgba(255,255,255,.58); border-color: rgba(28,50,82,.14); }
+.wall-choice.custom { outline: 2px solid #ffc97a; outline-offset: -2px; }

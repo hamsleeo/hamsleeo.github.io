@@ -228,7 +228,7 @@
     set('models', state.models.map(function (m) { return [m.name, m.role, m.score, m.emoji].join('|'); }).join('\n'));
     set('fun', state.fun.map(function (f) { return [f.subject, f.title, f.total, f.done, f.unfinished].join('|'); }).join('\n'));
     renderPeriods();
-    renderChips(); renderModuleStyles(); renderShout(); renderShoutStyle(); renderHome();
+    renderChips(); renderBackgroundSettings(); renderModuleStyles(); renderShout(); renderShoutStyle(); renderHome();
   }
 
   /* ---------- 保存 / 读取 ---------- */
@@ -254,6 +254,11 @@
       }
       if (!state.leaves) state.leaves = [];
       if (state.termStart == null) state.termStart = '';
+      if (state.transparentMode == null) {
+        state.transparentMode = true;
+        if (!state.customBackground && (!state.wallpaper || state.wallpaper === 'gradient')) state.wallpaper = 'bgmint';
+      }
+      if (typeof state.customBackground !== 'string') state.customBackground = '';
       if (state.moduleOrder && state.moduleOrder.indexOf('leave') < 0) {
         var li = state.moduleOrder.indexOf('attention');
         state.moduleOrder.splice(li >= 0 ? li : state.moduleOrder.length, 0, 'leave');
@@ -530,7 +535,12 @@
       '<div class="rank-val">' + val + '</div></div>';
   }
 
-  /* ---------- 主题 ---------- */
+  /* ---------- 主题 / 透明模式 / 背景图 ---------- */
+  function cssForAttr(css) { return String(css || '').replace(/"/g, '&quot;'); }
+  function wallpaperCss(k) {
+    var c = WALLPAPERS[k] && WALLPAPERS[k].css;
+    return (c && c !== 'none') ? c : 'linear-gradient(135deg,#eef3fa,#cfdcef)';
+  }
   function renderChips() {
     $('#themeChips').innerHTML = Object.keys(THEMES).map(function (k) {
       var t = THEMES[k];
@@ -538,8 +548,57 @@
       return '<button class="chip' + (state.theme === k ? ' active' : '') + '" data-theme="' + k + '">' + dot + t.name + (t.light ? ' ·浅' : '') + '</button>';
     }).join('');
     $('#wallChips').innerHTML = Object.keys(WALLPAPERS).map(function (k) {
-      return '<button class="chip' + (state.wallpaper === k ? ' active' : '') + '" data-wall="' + k + '">' + WALLPAPERS[k].name + '</button>';
+      var active = (state.wallpaper === k && !state.customBackground);
+      return '<button class="chip bg-chip' + (active ? ' active' : '') + '" data-wall="' + k + '" title="' + WALLPAPERS[k].name + '">' +
+        '<i class="bg-thumb" style="background-image:' + cssForAttr(wallpaperCss(k)) + '"></i>' + WALLPAPERS[k].name + '</button>';
     }).join('');
+  }
+  function renderBackgroundSettings() {
+    var toggle = $('#transparentMode');
+    if (toggle) toggle.checked = !!state.transparentMode;
+    var gallery = $('#bgGallery');
+    if (gallery) {
+      var keys = Object.keys(WALLPAPERS).filter(function (k) { return /^bg/.test(k); });
+      var html = keys.map(function (k) {
+        var active = (state.wallpaper === k && !state.customBackground);
+        return '<button type="button" class="bg-item' + (active ? ' active' : '') + '" data-bg="' + k + '" title="' + WALLPAPERS[k].name + '">' +
+          '<i class="bg-thumb" style="background-image:' + cssForAttr(wallpaperCss(k)) + '"></i>' + WALLPAPERS[k].name + '</button>';
+      }).join('');
+      if (state.customBackground) {
+        html += '<button type="button" class="bg-item active" data-custombg="1" title="点击替换我的图片">' +
+          '<i class="bg-thumb" style="background-image:url(&quot;' + state.customBackground + '&quot;)"></i>我的图片</button>';
+      }
+      gallery.innerHTML = html;
+    }
+    var label = $('#customBgState');
+    if (label) label.textContent = state.customBackground ? '已设置（点击缩略图可替换）' : '未设置';
+  }
+  // 上传图片压到 1920×1080 内并转 JPEG，避免整份班务数据被大图撑爆
+  function compressBackgroundImage(file) {
+    return new Promise(function (resolve, reject) {
+      if (!/^image\//.test(file.type || '')) return reject(new Error('请选择图片文件'));
+      var reader = new FileReader();
+      reader.onerror = function () { reject(new Error('读取图片失败')); };
+      reader.onload = function () {
+        var img = new Image();
+        img.onerror = function () { reject(new Error('图片解析失败')); };
+        img.onload = function () {
+          var scale = Math.min(1, 1920 / (img.width || 1920), 1080 / (img.height || 1080));
+          var w = Math.max(1, Math.round((img.width || 1920) * scale));
+          var h = Math.max(1, Math.round((img.height || 1080) * scale));
+          var canvas = document.createElement('canvas');
+          canvas.width = w; canvas.height = h;
+          var ctx = canvas.getContext('2d');
+          ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, w, h);
+          ctx.drawImage(img, 0, 0, w, h);
+          var data = canvas.toDataURL('image/jpeg', 0.82);
+          if (data.length > 900000) data = canvas.toDataURL('image/jpeg', 0.66);
+          resolve(data);
+        };
+        img.src = reader.result;
+      };
+      reader.readAsDataURL(file);
+    });
   }
 
   // 板块显示勾选 + 标题颜色/字号
@@ -701,7 +760,30 @@
     var th = e.target.closest('[data-theme]');
     if (th) { state.theme = th.dataset.theme; renderChips(); save(); return; }
     var w = e.target.closest('[data-wall]');
-    if (w) { state.wallpaper = w.dataset.wall; renderChips(); save(); }
+    if (w) { state.wallpaper = w.dataset.wall; state.customBackground = ''; renderChips(); renderBackgroundSettings(); save(); return; }
+    var bg = e.target.closest('[data-bg]');
+    if (bg) {
+      state.wallpaper = bg.dataset.bg; state.customBackground = ''; state.transparentMode = true;
+      renderChips(); renderBackgroundSettings(); save(); return;
+    }
+    if (e.target.closest('[data-custombg]')) { var up = $('#bgUpload'); if (up) up.click(); return; }
+    if (e.target.closest('#clearBg')) {
+      state.customBackground = ''; renderChips(); renderBackgroundSettings(); save(); toast('已清除自定义背景'); return;
+    }
+  });
+  document.addEventListener('change', function (e) {
+    if (!e.target) return;
+    if (e.target.id === 'transparentMode') { state.transparentMode = !!e.target.checked; save(); return; }
+    if (e.target.id === 'bgUpload') {
+      var f = e.target.files && e.target.files[0];
+      e.target.value = '';
+      if (!f) return;
+      compressBackgroundImage(f).then(function (dataUrl) {
+        state.customBackground = dataUrl; state.transparentMode = true;
+        renderChips(); renderBackgroundSettings(); save();
+        toast('背景图片已添加并同步到大屏');
+      }).catch(function (err) { toast('添加失败：' + err.message); });
+    }
   });
   $('#manageTabs').addEventListener('click', function (e) {
     var b = e.target.closest('[data-mtab]'); if (!b) return;

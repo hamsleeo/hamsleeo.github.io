@@ -114,11 +114,15 @@
     }
     return {
       version: 1,
-      className: '915班',
+      className: '班级',
       slogan: '我们班最棒',
       quote: '睡个安稳觉，明天才有清楚的头脑去做在意的事。',
       theme: 'cloudlight',
-      wallpaper: 'gradient',
+      wallpaper: 'bgmint',
+      /* 透明玻璃模式默认开启：隐藏渐变光斑，卡片改为半透明磨砂；背景图由 wallpaper 或 customBackground 决定 */
+      transparentMode: true,
+      /* 班主任后台上传的背景图（压缩后的 data URL），优先级高于内置背景 */
+      customBackground: '',
       margins: { left: 20, right: 0, top: 0, bottom: 0 },
       zoom: 100,
       noticeAccent: '暖橘',
@@ -310,6 +314,15 @@
     mint:     { name: '薄荷绿', a: '#112421', b: '#1a3a33', c: '#2c5f50', accent: '#8fe3c6', accent2: '#d4f0a8' }
   };
   global.WALLPAPERS = {
+    /* 透明模式专用：无图时完全透出底层/桌面 */
+    glass:     { name: '纯透明', css: 'none' },
+    /* 内置背景图片：班主任可直接在后台选用，也可上传自己的图片 */
+    bgmint:    { name: '青柠薄雾', css: 'url("backgrounds/mist.svg")' },
+    bgsunrise: { name: '晨曦暖阳', css: 'url("backgrounds/sunrise.svg")' },
+    bgocean:   { name: '蓝屿晨光', css: 'url("backgrounds/ocean.svg")' },
+    bgsakura:  { name: '樱花微风', css: 'url("backgrounds/sakura.svg")' },
+    bgaurora:  { name: '星海夜航', css: 'url("backgrounds/aurora.svg")' },
+    bggreen:   { name: '墨绿学堂', css: 'url("backgrounds/green.svg")' },
     /* 浅色/中性背景——排在前面，与浅色主题搭配更柔和 */
     gradient:  { name: '渐变', css: 'none' },
     campus:    { name: '校园', css: 'linear-gradient(135deg, rgba(255,255,255,.5) 25%, transparent 25%, transparent 50%, rgba(255,255,255,.5) 50%, rgba(255,255,255,.5) 75%, transparent 75%)' },

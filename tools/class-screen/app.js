@@ -57,6 +57,12 @@
     }
     if (!st.leaves) st.leaves = [];
     if (st.termStart == null) st.termStart = '';
+    // 透明玻璃模式 / 自定义背景：老数据首次升级时默认开启透明模式，并给一张柔和内置背景图
+    if (st.transparentMode == null) {
+      st.transparentMode = true;
+      if (!st.customBackground && (!st.wallpaper || st.wallpaper === 'gradient')) st.wallpaper = 'bgmint';
+    }
+    if (typeof st.customBackground !== 'string') st.customBackground = '';
     // 喊话样式：老数据补默认模板（背景色留空=用模板默认）
     if (!st.shoutStyle || typeof st.shoutStyle !== 'object') st.shoutStyle = { template: 'classic', bgColor: '' };
     if (!st.shoutStyle.template) st.shoutStyle.template = 'classic';
@@ -217,8 +223,14 @@
     /* 浅色主题标记：CSS 据此把文字/面板/深色底切换到浅色调 */
     if (t.light) screen.setAttribute('data-light', '1');
     else screen.removeAttribute('data-light');
-    var w = WALLPAPERS[state.wallpaper] || WALLPAPERS.gradient;
-    screen.style.setProperty('--wall-image', w.css);
+    var custom = (/^data:image\//.test(state.customBackground || '') ? state.customBackground : '');
+    var w = custom ? { css: 'url("' + custom + '")' } : (WALLPAPERS[state.wallpaper] || WALLPAPERS.gradient);
+    screen.style.setProperty('--wall-image', w.css || 'none');
+    // 透明玻璃模式：隐藏光斑/网格，卡片改磨砂半透明；无图时底层/桌面可见
+    if (state.transparentMode) screen.setAttribute('data-transparent', '1');
+    else screen.removeAttribute('data-transparent');
+    screen.setAttribute('data-wall-empty', (w.css && w.css !== 'none') ? '0' : '1');
+    document.body.classList.toggle('transparent-wall', !!state.transparentMode);
   }
   /* 自由布局：把每个板块的矩形(百分比)写成内联样式。
      画布是 dashboard-grid，left/top/width/height 都相对它计算。 */
@@ -709,10 +721,15 @@
       return '<button class="theme-swatch' + (state.theme === k ? ' active' : '') + '" data-theme="' + k + '" title="' + t.name + '" ' +
         'style="background:linear-gradient(135deg,' + t.a + ',' + t.c + ')"></button>';
     }).join('');
-    $('#wallpaperChoices').innerHTML = Object.keys(WALLPAPERS).map(function (k) {
-      return '<button class="wall-choice' + (state.wallpaper === k ? ' active' : '') + '" data-wall="' + k + '" title="' + WALLPAPERS[k].name + '" ' +
-        'style="background-image:' + WALLPAPERS[k].css + ';background-color:#223"></button>';
+    var wallHtml = Object.keys(WALLPAPERS).map(function (k) {
+      return '<button class="wall-choice' + (state.wallpaper === k && !state.customBackground ? ' active' : '') + '" data-wall="' + k + '" title="' + WALLPAPERS[k].name + '" ' +
+        'style="background-image:' + (WALLPAPERS[k].css === 'none' ? 'linear-gradient(135deg,#eef3fa,#cfdcef)' : WALLPAPERS[k].css) + ';background-color:#223"></button>';
     }).join('');
+    if (state.customBackground) {
+      wallHtml = '<button class="wall-choice custom active" data-wall="custom" title="当前自定义背景" ' +
+        'style="background-image:url(&quot;' + state.customBackground + '&quot;);background-color:#223"></button>' + wallHtml;
+    }
+    $('#wallpaperChoices').innerHTML = wallHtml;
   }
   function syncSettingsInputs() {
     var m = state.margins;
@@ -1162,7 +1179,10 @@
   });
   $('#wallpaperChoices').addEventListener('click', function (e) {
     var b = e.target.closest('[data-wall]'); if (!b) return;
-    state.wallpaper = b.dataset.wall; applyTheme(); renderThemeChoices(); save();
+    var key = b.dataset.wall;
+    if (key === 'custom') { state.transparentMode = true; }
+    else { state.wallpaper = key; state.customBackground = ''; }
+    applyTheme(); renderThemeChoices(); save();
   });
   [['#inputClassName','className'],['#inputSlogan','slogan'],['#inputQuote','quote']].forEach(function (pair) {
     $(pair[0]).addEventListener('input', function (e) { state[pair[1]] = e.target.value; renderShell(); save(); });
