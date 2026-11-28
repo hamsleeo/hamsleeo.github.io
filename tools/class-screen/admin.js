@@ -1441,12 +1441,13 @@
 (function () {
   'use strict';
   var deferredPrompt = null;
-  var btn = document.getElementById('btnAddDesktop');
+  var btns = document.querySelectorAll('[data-install]');
   var mask = document.getElementById('installMask');
   var stepsBox = document.getElementById('installSteps');
   var primary = document.getElementById('installPrimary');
   var intro = document.getElementById('installIntro');
-  if (!btn || !mask) return;
+  if (!btns.length || !mask) return;
+  function setBtnsHidden(v) { for (var i = 0; i < btns.length; i++) btns[i].hidden = v; }
 
   var UA = navigator.userAgent || '';
   var isIOS = /iPad|iPhone|iPod/.test(UA) ||
@@ -1456,10 +1457,10 @@
 
   // 已安装为应用时隐藏按钮
   if (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) {
-    btn.hidden = true;
+    setBtnsHidden(true);
   }
   window.addEventListener('appinstalled', function () {
-    btn.hidden = true;
+    setBtnsHidden(true);
     closeMask();
     try { toast && toast('已添加到桌面'); } catch (e) {}
   });
@@ -1467,7 +1468,7 @@
   window.addEventListener('beforeinstallprompt', function (e) {
     e.preventDefault();
     deferredPrompt = e;
-    btn.hidden = false;
+    setBtnsHidden(false);
   });
 
   function closeMask() { mask.hidden = true; }
@@ -1496,53 +1497,73 @@
     } catch (e) { return false; }
   }
 
-  function showDialog() {
+  function showDialog(mode) {
     stepsBox.innerHTML = '';
-    if (isIOS) {
-      intro.textContent = '苹果手机无法一键安装，按下面 3 步即可加到主屏幕（所有网页都这样）。';
-      stepsBox.innerHTML =
-        step(1, '点浏览器底部中间的 <kbd>分享</kbd> 按钮（方框向上箭头）') +
-        step(2, '在列表里找到并点 <kbd>添加到主屏幕</kbd>') +
-        step(3, '点右上角 <kbd>添加</kbd>，桌面就会出现「班级管理」图标');
-      primary.textContent = '下载电脑快捷方式';
-      primary.onclick = function () {
-        if (downloadUrlShortcut()) { closeMask(); try { toast && toast('已下载，拖到电脑桌面即可'); } catch (e) {} }
-      };
-    } else if (deferredPrompt) {
-      intro.textContent = '点下面的「安装到桌面」，浏览器会弹出确认，点确认即可。';
-      stepsBox.innerHTML =
-        step(1, '点 <kbd>安装到桌面</kbd> → 弹窗里点 <kbd>安装</kbd>') +
-        step(2, '安装后桌面出现「班级管理」图标，点开就是本班管理端');
-      primary.textContent = '安装到桌面';
-      primary.onclick = function () {
-        closeMask();
-        deferredPrompt.prompt();
-        deferredPrompt.userChoice.then(function () { deferredPrompt = null; });
-      };
-    } else if (isAndroid) {
-      intro.textContent = '安卓手机点浏览器菜单，选「添加到主屏幕」即可。';
-      stepsBox.innerHTML =
-        step(1, '点浏览器右上角 <kbd>⋮</kbd> 菜单') +
-        step(2, '选 <kbd>添加到主屏幕</kbd> 或 <kbd>安装应用</kbd>') +
-        step(3, '确认后桌面出现「班级管理」图标');
-      primary.textContent = '下载电脑快捷方式';
-      primary.onclick = function () {
-        if (downloadUrlShortcut()) { closeMask(); try { toast && toast('已下载，拖到电脑桌面即可'); } catch (e) {} }
-      };
+    var wantMobile = (mode === 'mobile') || (mode !== 'pc' && isMobile);
+
+    if (wantMobile) {
+      // 手机端：按系统给出「添加到主屏幕」步骤
+      if (isIOS) {
+        intro.textContent = '苹果手机加到主屏幕（所有网页都这样，3 步）：';
+        stepsBox.innerHTML =
+          step(1, '点浏览器底部中间的 <kbd>分享</kbd> 按钮（方框向上箭头）') +
+          step(2, '在列表里找到并点 <kbd>添加到主屏幕</kbd>') +
+          step(3, '点右上角 <kbd>添加</kbd>，主屏幕出现「班级管理」图标');
+      } else {
+        intro.textContent = '安卓手机加到主屏幕（按下面步骤操作）：';
+        if (deferredPrompt) {
+          stepsBox.innerHTML =
+            step(1, '点下面 <kbd>安装到桌面</kbd>，在弹窗里点 <kbd>安装</kbd>') +
+            step(2, '主屏幕出现「班级管理」图标，点开即用');
+        } else {
+          stepsBox.innerHTML =
+            step(1, '点浏览器右上角 <kbd>⋮</kbd> 菜单') +
+            step(2, '选 <kbd>添加到主屏幕</kbd> 或 <kbd>安装应用</kbd>') +
+            step(3, '确认后主屏幕出现「班级管理」图标');
+        }
+      }
+      if (deferredPrompt && !isIOS) {
+        primary.textContent = '安装到桌面';
+        primary.onclick = function () {
+          closeMask();
+          deferredPrompt.prompt();
+          deferredPrompt.userChoice.then(function () { deferredPrompt = null; });
+        };
+      } else {
+        primary.textContent = '知道了';
+        primary.onclick = closeMask;
+      }
     } else {
-      // 电脑端但 beforeinstallprompt 未触发（可能非 Chrome/Edge 或条件未满足）
-      intro.textContent = '如果浏览器支持，会弹「安装应用」；否则可下载快捷方式文件放到桌面。';
-      stepsBox.innerHTML =
-        step(1, '推荐：用 <kbd>Edge</kbd> 或 <kbd>Chrome</kbd> 打开本页') +
-        step(2, '点地址栏右侧的 <kbd>安装应用</kbd> 图标，一键装到桌面') +
-        step(3, '或点下面按钮下载 <kbd>.url</kbd> 文件，拖到电脑桌面');
-      primary.textContent = '下载电脑快捷方式';
-      primary.onclick = function () {
-        if (downloadUrlShortcut()) { closeMask(); try { toast && toast('已下载，拖到电脑桌面即可'); } catch (e) {} }
-      };
+      // 电脑端：PWA 一键安装 + .url 快捷方式兜底
+      if (deferredPrompt) {
+        intro.textContent = '点下面「安装到桌面」，浏览器弹出确认后点「安装」即可。';
+        stepsBox.innerHTML =
+          step(1, '点 <kbd>安装到桌面</kbd> → 弹窗里点 <kbd>安装</kbd>') +
+          step(2, '桌面出现「班级管理」图标，点开就是本班管理端');
+        primary.textContent = '安装到桌面';
+        primary.onclick = function () {
+          closeMask();
+          deferredPrompt.prompt();
+          deferredPrompt.userChoice.then(function () { deferredPrompt = null; });
+        };
+      } else {
+        intro.textContent = '浏览器装不了应用时，下载快捷方式文件放到桌面即可。';
+        stepsBox.innerHTML =
+          step(1, '推荐用 <kbd>Edge</kbd> 或 <kbd>Chrome</kbd> 打开本页，点地址栏右侧 <kbd>安装应用</kbd> 图标') +
+          step(2, '或点下面按钮下载 <kbd>.url</kbd> 文件') +
+          step(3, '把下载的文件拖到电脑桌面，双击即可打开本班管理端');
+        primary.textContent = '下载电脑快捷方式';
+        primary.onclick = function () {
+          if (downloadUrlShortcut()) { closeMask(); try { toast && toast('已下载，拖到电脑桌面即可'); } catch (e) {} }
+        };
+      }
     }
     mask.hidden = false;
   }
 
-  btn.addEventListener('click', showDialog);
+  for (var i = 0; i < btns.length; i++) {
+    (function (b) {
+      b.addEventListener('click', function () { showDialog(b.getAttribute('data-install')); });
+    })(btns[i]);
+  }
 })();

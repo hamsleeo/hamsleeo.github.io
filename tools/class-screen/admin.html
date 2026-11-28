@@ -72,6 +72,10 @@
         <div class="auth-links"><button class="link-btn" id="toLogin">已有账号？密码登录 →</button></div>
       </div>
 
+      <div class="install-entry">
+        <button type="button" class="ins-entry" data-install="pc"><span class="ie-ico">💻</span><span>添加到电脑桌面</span></button>
+        <button type="button" class="ins-entry" data-install="mobile"><span class="ie-ico">📱</span><span>添加到手机桌面</span></button>
+      </div>
       <div class="msg" id="authMsg"></div>
       <a class="back" href="./">← 返回大屏展示</a>
     </div>
@@ -88,7 +92,8 @@
         </div>
         <div class="top-actions">
           <label class="class-pick"><span>班级</span><select id="classSelect"></select></label>
-          <button class="icon-btn install-btn" id="btnAddDesktop" title="添加到桌面" aria-label="添加到桌面">⊞</button>
+          <button class="entry-btn" id="btnAddDesktop" data-install="pc" title="添加到电脑桌面">💻 <span class="etxt">电脑桌面</span></button>
+          <button class="entry-btn" data-install="mobile" title="添加到手机桌面">📱 <span class="etxt">手机桌面</span></button>
           <button class="icon-btn" id="openScreen" title="查看大屏" aria-label="查看大屏">↗</button>
         </div>
       </div>

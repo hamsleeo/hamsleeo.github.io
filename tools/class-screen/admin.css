@@ -66,6 +66,19 @@ textarea { resize:vertical; line-height:1.6; }
 .install-btn { background:linear-gradient(135deg,#fdf1e3,#f6d9b6); border-color:#ecc69b; color:#b9682d; font-weight:700; }
 .install-btn[hidden] { display:none; }
 
+/* 添加到桌面：明确文字入口（登录页 + 管理页顶部） */
+.install-entry { display:flex; gap:9px; margin:14px 0 4px; }
+.ins-entry { flex:1; display:flex; align-items:center; justify-content:center; gap:6px; padding:11px 8px; border:1px solid #ecc69b; border-radius:11px; background:linear-gradient(135deg,#fff8ef,#fdf0df); color:#a55a1e; font-size:13px; font-weight:700; cursor:pointer; white-space:nowrap; }
+.ins-entry:hover { background:linear-gradient(135deg,#fdf0df,#f9e4c8); }
+.ins-entry .ie-ico { font-size:17px; line-height:1; }
+.entry-btn { display:inline-flex; align-items:center; gap:5px; height:38px; padding:0 12px; border:1px solid #ecc69b; border-radius:11px; background:linear-gradient(135deg,#fdf1e3,#f6d9b6); color:#b9682d; font-size:13px; font-weight:700; cursor:pointer; white-space:nowrap; }
+.entry-btn:hover { filter:brightness(.97); }
+.entry-btn[hidden] { display:none; }
+@media (max-width:720px) {
+  .entry-btn .etxt { display:none; }
+  .entry-btn { padding:0 10px; }
+}
+
 /* 添加到桌面引导弹窗 */
 .install-mask { position:fixed; inset:0; z-index:100; background:rgba(20,14,8,.45); display:flex; align-items:center; justify-content:center; padding:20px; }
 .install-mask[hidden] { display:none; }
