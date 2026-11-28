@@ -387,6 +387,90 @@
         '<div class="hw-meta"><span>' + esc(hw.subject) + '</span><span>' + esc(it.detail) + '</span></div></div>';
     }).join('');
   }
+  /* ---- 大屏端免密作业编辑（各科老师/课代表直接登记） ----
+     只改 state.homework 一个字段，通过 CloudAPI.saveHomework 写回服务端，
+     不触碰积分/名单/课表等其它数据；编辑期间暂停轮询覆盖。 */
+  var hwDraft = null;      // 编辑中的副本，取消则丢弃
+  var hwActiveSubject = 0; // 编辑弹窗当前科目
+  function openHomeworkEditor() {
+    hwDraft = JSON.parse(JSON.stringify(state.homework || []));
+    if (!hwDraft.length) hwDraft = [{ subject: '语文', items: [] }];
+    hwActiveSubject = 0;
+    ui.hwEditing = true;
+    renderHwEditor();
+  }
+  function renderHwEditor() {
+    var root = $('#modalRoot');
+    if (hwActiveSubject >= hwDraft.length) hwActiveSubject = Math.max(0, hwDraft.length - 1);
+    var tabs = hwDraft.map(function (h, i) {
+      return '<button class="hw-tab' + (i === hwActiveSubject ? ' active' : '') + '" data-hws="' + i + '">' + esc(h.subject || '未命名') + '</button>';
+    }).join('');
+    var cur = hwDraft[hwActiveSubject] || { subject: '', items: [] };
+    var rows = cur.items.map(function (it, i) {
+      return '<div class="hwe-row" data-hwr="' + i + '">' +
+        '<div class="hwe-row-head"><b>第 ' + (i + 1) + ' 项</b><button class="hwe-del" data-hwdel="' + i + '" title="删除本项">✕ 删除</button></div>' +
+        '<input class="hwe-title" data-hwtitle="' + i + '" placeholder="作业标题（必填）" value="' + esc(it.title || '') + '">' +
+        '<textarea class="hwe-detail" data-hwdetail="' + i + '" placeholder="要求详情（选填）">' + esc(it.detail || '') + '</textarea>' +
+        '</div>';
+    }).join('');
+    root.innerHTML = '<div class="modal hwe-modal"><h3>✎ 编辑今日作业</h3>' +
+      '<p class="hint">切换科目登记各科作业，保存后立即显示在大屏上。仅作业内容可编辑。</p>' +
+      '<div class="hwe-tabs">' + tabs + '<button class="hwe-add-sub" data-hwaddsub title="新增科目">＋科目</button></div>' +
+      '<div class="hwe-subline">科目名称：<input class="hwe-subject" id="hweSubject" value="' + esc(cur.subject || '') + '" placeholder="如 语文"></div>' +
+      '<div class="hwe-rows">' + (rows || '<p class="hint">该科目暂无作业，点下方「＋ 添加作业」开始登记。</p>') + '</div>' +
+      '<button class="hwe-add" data-hwadditem>＋ 添加作业</button>' +
+      '<div class="modal-actions"><button class="et-btn" data-hwmodal="cancel">取消</button><button class="et-btn primary" data-hwmodal="save">保存到大屏</button></div></div>';
+    root.classList.add('show');
+    root.dataset.hwedit = '1';
+  }
+  function syncHwEditorInputs() {
+    // 把当前 DOM 输入先写回 hwDraft，避免切 tab 时丢失未提交内容
+    var cur = hwDraft[hwActiveSubject]; if (!cur) return;
+    var subj = $('#hweSubject'); if (subj) cur.subject = subj.value.trim() || '其他';
+    $$('.hwe-row', $('#modalRoot')).forEach(function (row) {
+      var i = +row.dataset.hwr;
+      var t = $('.hwe-title', row), d = $('.hwe-detail', row);
+      if (cur.items[i]) {
+        if (t) cur.items[i].title = t.value.trim();
+        if (d) cur.items[i].detail = d.value.trim();
+      }
+    });
+  }
+  function saveHomeworkEditor() {
+    syncHwEditorInputs();
+    // 清理：去掉空标题条目、空科目；科目名去重
+    var clean = [];
+    hwDraft.forEach(function (h) {
+      var subject = String(h.subject || '').trim() || '其他';
+      var items = (h.items || []).filter(function (it) { return String(it.title || '').trim(); })
+        .map(function (it) { return { title: String(it.title).trim(), detail: String(it.detail || '').trim() }; });
+      if (!items.length) return; // 丢弃没有任何作业的科目
+      var exist = clean.filter(function (x) { return x.subject === subject; })[0];
+      if (exist) exist.items = exist.items.concat(items);
+      else clean.push({ subject: subject, items: items });
+    });
+    state.homework = clean;
+    ui.hwSubject = 0;
+    // 先本地立即生效，避免等待网络时大屏没反应
+    save(); renderAll();
+    closeModal();
+    ui.hwEditing = false;
+    hwDraft = null;
+    toast('作业已更新，正在同步…');
+    if (!cloudReady || typeof CloudAPI.saveHomework !== 'function') {
+      toast('作业已保存到本机；云端版需班主任登录后在管理端保存');
+      return;
+    }
+    CloudAPI.saveHomework(clean, CloudAPI.getBoardKey ? CloudAPI.getBoardKey() : undefined)
+      .then(function () {
+        writeSnapshot();
+        setSync('作业已同步 · ' + new Date().toLocaleTimeString('zh-CN', { hour12: false }));
+        toast('作业已保存并同步');
+      })
+      .catch(function (e) {
+        toast('本机已更新，云端同步失败：' + e.message);
+      });
+  }
   function renderDuty() {
     $('#dutyList').innerHTML = state.duty.map(function (d) {
       return '<div class="duty-row"><div class="duty-task">' + esc(d.task) + '</div><div class="duty-names">' + esc(d.names) + '</div></div>';
@@ -791,7 +875,7 @@
     root.dataset.config = module;
     $('#modalText').focus();
   }
-  function closeModal() { $('#modalRoot').classList.remove('show'); $('#modalRoot').innerHTML = ''; }
+  function closeModal() { $('#modalRoot').classList.remove('show'); $('#modalRoot').innerHTML = ''; try { $('#modalRoot').dataset.hwedit = ''; } catch (e) {} }
 
   /* ---------------- 快捷点评 ---------------- */
   function renderStudentPicker() {
@@ -913,6 +997,38 @@
   $('#hwTabs').addEventListener('click', function (e) {
     var b = e.target.closest('.hw-tab'); if (!b) return;
     ui.hwSubject = +b.dataset.hw; renderHomework();
+  });
+
+  var hwEditBtn = $('#hwEditBtn');
+  if (hwEditBtn) hwEditBtn.addEventListener('click', function (e) { e.stopPropagation(); openHomeworkEditor(); });
+  // 作业编辑弹窗内的交互（独立命名空间 data-hw*，不共用通用 modal 的 data-modal）
+  $('#modalRoot').addEventListener('click', function (e) {
+    var root = $('#modalRoot');
+    if (!root.dataset.hwedit) return;
+    var b;
+    if ((b = e.target.closest('[data-hwmodal]'))) {
+      if (b.dataset.hwmodal === 'cancel') { closeModal(); ui.hwEditing = false; hwDraft = null; }
+      else if (b.dataset.hwmodal === 'save') saveHomeworkEditor();
+      return;
+    }
+    if ((b = e.target.closest('[data-hws]'))) { syncHwEditorInputs(); hwActiveSubject = +b.dataset.hws; renderHwEditor(); return; }
+    if (e.target.closest('[data-hwaddsub]')) {
+      syncHwEditorInputs();
+      var used = hwDraft.map(function (h) { return h.subject; });
+      var presets = ['语文','数学','英语','物理','化学','生物','政治','历史','地理','其他'];
+      var next = presets.filter(function (s) { return used.indexOf(s) < 0; })[0] || '新科目';
+      hwDraft.push({ subject: next, items: [] }); hwActiveSubject = hwDraft.length - 1; renderHwEditor(); return;
+    }
+    if (e.target.closest('[data-hwadditem]')) {
+      syncHwEditorInputs();
+      var cur = hwDraft[hwActiveSubject]; if (cur) { cur.items = cur.items || []; cur.items.push({ title: '', detail: '' }); renderHwEditor(); }
+      return;
+    }
+    if ((b = e.target.closest('[data-hwdel]'))) {
+      syncHwEditorInputs();
+      var cur2 = hwDraft[hwActiveSubject]; if (cur2) { cur2.items.splice(+b.dataset.hwdel, 1); renderHwEditor(); }
+      return;
+    }
   });
 
   $('#settingsTabs').addEventListener('click', function (e) {
@@ -1267,6 +1383,8 @@
   }
 
   async function loadCloud() {
+    // 大屏作业编辑中：跳过本次轮询，避免整体覆盖正在登记的草稿
+    if (ui.hwEditing) return;
     try {
       var row = await CloudAPI.loadBoard();
       if (row && row.data && Object.keys(row.data).length) {

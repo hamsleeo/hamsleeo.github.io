@@ -395,6 +395,28 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
 .modal textarea { width: 100%; height: 220px; resize: vertical; background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.14); border-radius: 9px; color: var(--ink); padding: 10px; font-size: 12px; line-height: 1.7; outline: none; }
 .modal textarea:focus { border-color: var(--accent); }
 .modal-actions { display: flex; justify-content: flex-end; gap: 9px; margin-top: 16px; }
+/* ---- 大屏免密作业编辑 ---- */
+.hw-edit-btn { display: inline-flex; align-items: center; gap: 4px; margin-left: auto; margin-right: 8px; padding: 4px 12px; border: 1px solid rgba(127,214,192,.45); background: rgba(127,214,192,.14); color: #dffff4; border-radius: 8px; font-size: 15px; cursor: pointer; white-space: nowrap; }
+.hw-edit-btn:hover { background: rgba(127,214,192,.28); }
+body.mode-display .hw-edit-btn { opacity: .85; }
+.hwe-modal { width: 640px; max-height: 86vh; }
+.hwe-modal textarea { height: 56px; }
+.hwe-tabs { display: flex; flex-wrap: wrap; gap: 7px; margin: 6px 0 12px; }
+.hwe-add-sub { border: 1px dashed rgba(127,214,192,.5); background: transparent; color: var(--accent-2); border-radius: 8px; padding: 4px 11px; font-size: 13px; cursor: pointer; }
+.hwe-subline { display: flex; align-items: center; gap: 9px; margin-bottom: 12px; color: var(--ink-2); font-size: 13px; }
+.hwe-subject { flex: 1; background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.14); border-radius: 8px; color: var(--ink); padding: 7px 10px; font-size: 14px; outline: none; }
+.hwe-subject:focus { border-color: var(--accent); }
+.hwe-rows { max-height: 46vh; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; padding-right: 4px; }
+.hwe-row { background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.1); border-radius: 10px; padding: 10px 12px; }
+.hwe-row-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 7px; color: var(--ink-2); font-size: 13px; }
+.hwe-del { border: none; background: transparent; color: #ff8f8f; font-size: 12px; cursor: pointer; }
+.hwe-row input, .hwe-row textarea { width: 100%; box-sizing: border-box; background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.14); border-radius: 8px; color: var(--ink); padding: 7px 10px; font-size: 13px; outline: none; margin-bottom: 6px; }
+.hwe-row input:focus, .hwe-row textarea:focus { border-color: var(--accent); }
+.hwe-add { width: 100%; margin-top: 12px; padding: 9px; border: 1px dashed rgba(127,214,192,.5); background: transparent; color: var(--accent-2); border-radius: 9px; font-size: 14px; cursor: pointer; }
+.hwe-add:hover { background: rgba(127,214,192,.1); }
+/* 浅色主题适配 */
+#screen[data-light="1"] .hw-edit-btn { color: #1c5c4a; border-color: rgba(28,92,74,.4); background: rgba(28,92,74,.08); }
+#screen[data-light="1"] .hwe-subject, #screen[data-light="1"] .hwe-row input, #screen[data-light="1"] .hwe-row textarea { background: #f4f7fb; border-color: rgba(28,50,82,.18); color: #16324f; }
 .toast-root { position: absolute; left: 50%; bottom: 34px; transform: translateX(-50%); z-index: 100; display: flex; flex-direction: column; gap: 8px; align-items: center; }
 .toast {
   background: rgba(12,24,42,.96); border: 1px solid rgba(127,214,192,.45); color: var(--ink);

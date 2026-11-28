@@ -290,6 +290,35 @@ async function handleApi(req, res, urlObj) {
     }
   }
 
+  /* ---------- 大屏端免密作业编辑 ----------
+     仅供一体机大屏上的各科老师/课代表快速登记当日作业；
+     只改 board.data.homework 一个字段，其他数据（积分/名单/课表等）一律不碰，
+     因此无需登录、也不会放大权限面。字段做长度/条数上限防止误填刷屏。 */
+  if (p === '/api/homework' && method === 'POST') {
+    const body = await readBody(req);
+    const key = decodeURIComponent(String(body.key || '').trim() || 'main');
+    const hw = body.homework;
+    if (!Array.isArray(hw) || hw.length > 30) return fail(res, 400, '作业格式错误或科目过多');
+    const clean = [];
+    for (const h of hw) {
+      if (!h || typeof h !== 'object') continue;
+      const subject = String(h.subject || '其他').trim().slice(0, 12) || '其他';
+      const items = Array.isArray(h.items) ? h.items.slice(0, 20).map(it => ({
+        title: String((it && it.title) || '').trim().slice(0, 120),
+        detail: String((it && it.detail) || '').trim().slice(0, 500)
+      })).filter(it => it.title) : [];
+      clean.push({ subject: subject, items: items });
+    }
+    const row = db.boards[key] || { data: {}, updated_at: now(), owner_name: '' };
+    row.data = row.data || {};
+    row.data.homework = clean;
+    row.updated_at = now();
+    row.owner_name = '大屏作业编辑';
+    db.boards[key] = row;
+    saveDb(db);
+    return sendJson(res, 200, { ok: true, homework: clean, updated_at: row.updated_at });
+  }
+
   /* ---------- 权限 ---------- */
   if (p === '/api/access' && method === 'POST') {
     const u = requireUser(req, res);

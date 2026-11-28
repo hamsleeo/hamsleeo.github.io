@@ -137,6 +137,20 @@
     return res.data;
   }
 
+  // 大屏端免密作业编辑（云端版降级实现）：
+  // 云端 class_boards 受 RLS 保护，匿名无法写入。有登录态时读取整份数据、
+  // 只替换 homework 后整体保存；无登录态则明确提示（本地版一体机不受此限制）。
+  async function saveHomework(homework, key) {
+    if (!cloud) throw new Error('云服务未初始化');
+    var session = await getSession();
+    if (!session) throw new Error('线上大屏需班主任先登录管理端才能保存作业；本机一体机无此限制');
+    var k = key || getBoardKey();
+    var row = await loadBoard(k);
+    var full = (row && row.data) ? row.data : {};
+    full.homework = homework;
+    return saveBoard(full, session, k);
+  }
+
   async function saveBoard(state, session, key) {
     if (!cloud) throw new Error('云服务未初始化');
     var k = key || getBoardKey();
@@ -423,7 +437,7 @@
     BOARD_KEY: DEFAULT_BOARD_KEY,
     getBoardKey: getBoardKey, setBoardKey: setBoardKey, boardUrl: boardUrl,
     blankState: blankState,
-    loadBoard: loadBoard, saveBoard: saveBoard,
+    loadBoard: loadBoard, saveBoard: saveBoard, saveHomework: saveHomework,
     getMyAccess: getMyAccess, listClasses: listClasses, listUsers: listUsers,
     updateMyName: updateMyName,
     assignTeacher: assignTeacher, removeAssignment: removeAssignment,
