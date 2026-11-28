@@ -47,6 +47,9 @@ const CLASS_NAMES = {
 function now() { return new Date().toISOString(); }
 function uid(prefix) { return prefix + '_' + crypto.randomBytes(8).toString('hex'); }
 function deepClone(o) { return JSON.parse(JSON.stringify(o)); }
+// 数据版本号：班级数据每次变更都递增，大屏/壁纸据此判断是否真的需要刷新。
+// 时间戳精度只有毫秒，同一毫秒内两次写入可能相同；单调递增整数更可靠。
+function nextRev(row) { row.rev = (Number(row.rev) || 0) + 1; return row.rev; }
 
 function loadSeed() {
   try {
@@ -83,6 +86,12 @@ function initDb() {
     db.boards = db.boards || {};
     db.assignments = db.assignments || [];
     db.blocklist = db.blocklist || [];
+    // 升级兼容：老版本数据没有 rev 字段，统一补 0，保证大屏版本号探测类型一致（整数）
+    let patched = false;
+    Object.keys(db.boards).forEach(k => {
+      if (db.boards[k] && !Number.isInteger(db.boards[k].rev)) { db.boards[k].rev = 0; patched = true; }
+    });
+    if (patched) saveDb(db);
     return db;
   }
   const db = {
@@ -94,7 +103,8 @@ function initDb() {
     db.boards[key] = {
       data: key === 'main' && loadSeed() ? loadSeed() : blankState(),
       updated_at: now(),
-      owner_name: '系统初始化'
+      owner_name: '系统初始化',
+      rev: 0
     };
   });
   saveDb(db);
@@ -193,6 +203,15 @@ async function handleApi(req, res, urlObj) {
 
   if (p === '/api/health' && method === 'GET') return sendJson(res, 200, { ok: true, mode: 'local', time: now() });
 
+  /* ---------- 数据版本号：极轻量探测，供大屏/壁纸判断是否要刷新 ----------
+     只返回数字 rev，不携带整份班级数据；大屏每几秒探测一次也几乎零开销。 */
+  const revMatch = /^\/api\/rev\/([^/]+)$/.exec(p);
+  if (revMatch && method === 'GET') {
+    const key = decodeURIComponent(revMatch[1]);
+    const row = db.boards[key];
+    return sendJson(res, 200, { key: key, rev: row ? (Number(row.rev) || 0) : 0 });
+  }
+
   /* ---------- 登录 ---------- */
   if (p === '/api/auth/login' && method === 'POST') {
     const body = await readBody(req);
@@ -261,7 +280,7 @@ async function handleApi(req, res, urlObj) {
     if (db.classes.some(c => c.board_key === key)) return fail(res, 400, '该班级代码已存在');
     const cls = { board_key: key, class_name: String(body.className || key).slice(0, 40) };
     db.classes.push(cls);
-    db.boards[key] = { data: blankState(), updated_at: now(), owner_name: '系统初始化' };
+    db.boards[key] = { data: blankState(), updated_at: now(), owner_name: '系统初始化', rev: 0 };
     saveDb(db);
     return sendJson(res, 200, cls);
   }
@@ -284,6 +303,7 @@ async function handleApi(req, res, urlObj) {
       row.data = body.data;
       row.updated_at = now();
       row.owner_name = u.displayName || u.phone;
+      nextRev(row);
       db.boards[key] = row;
       saveDb(db);
       return sendJson(res, 200, row);
@@ -314,6 +334,7 @@ async function handleApi(req, res, urlObj) {
     row.data.homework = clean;
     row.updated_at = now();
     row.owner_name = '大屏作业编辑';
+    nextRev(row);
     db.boards[key] = row;
     saveDb(db);
     return sendJson(res, 200, { ok: true, homework: clean, updated_at: row.updated_at });
@@ -342,6 +363,7 @@ async function handleApi(req, res, urlObj) {
     row.data.fun = clean;
     row.updated_at = now();
     row.owner_name = '大屏消消乐编辑';
+    nextRev(row);
     db.boards[key] = row;
     saveDb(db);
     return sendJson(res, 200, { ok: true, fun: clean, updated_at: row.updated_at });

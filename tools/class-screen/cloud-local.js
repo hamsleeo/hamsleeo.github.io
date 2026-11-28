@@ -71,6 +71,12 @@
   function loadBoard(key) {
     return api('/api/boards/' + encodeURIComponent(key || getBoardKey()), { allow404: true });
   }
+  // 极轻量版本号探测：只取 rev 数字，不拉整份班级数据。大屏据此决定是否真的要刷新。
+  function getRev(key) {
+    return api('/api/rev/' + encodeURIComponent(key || getBoardKey())).then(function (r) {
+      return (r && Number(r.rev)) || 0;
+    });
+  }
   function saveBoard(state, session, key) {
     if (!session) return Promise.reject(new Error('请先登录本地服务器'));
     return api('/api/boards/' + encodeURIComponent(key || getBoardKey()), { method: 'PUT', body: { data: state } });
@@ -193,7 +199,7 @@
     BOARD_KEY: DEFAULT_BOARD_KEY,
     getBoardKey: getBoardKey, setBoardKey: setBoardKey, boardUrl: boardUrl,
     blankState: blankState,
-    loadBoard: loadBoard, saveBoard: saveBoard, saveHomework: saveHomework, saveFun: saveFun,
+    loadBoard: loadBoard, getRev: getRev, saveBoard: saveBoard, saveHomework: saveHomework, saveFun: saveFun,
     getMyAccess: getMyAccess, listClasses: listClasses, listUsers: listUsers,
     updateMyName: updateMyName,
     assignTeacher: assignTeacher, removeAssignment: removeAssignment,
