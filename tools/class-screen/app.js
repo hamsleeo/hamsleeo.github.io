@@ -263,6 +263,7 @@
   ];
   function renderShell() {
     $('#className').textContent = state.className;
+    document.title = '班级班务大屏 · ' + state.className;
     $('#railSlogan').textContent = state.slogan;
     $('#topQuote').textContent = state.quote;
     $('#deskIcons').innerHTML = deskIcons.map(function (d) {
